@@ -81,6 +81,19 @@ These figures are **before commissions, bid-ask spread, slippage, financing, and
 
 The repository notebook keeps the complete analysis code but clears execution outputs to remain lightweight and reviewable. Reported final metrics are preserved in the README and CSV files; running the notebook regenerates all tables and figures.
 
+## Execution modes
+
+The notebook supports two reproducibility modes through one configuration variable near the top:
+
+```python
+FULL_TUNING = False
+```
+
+- **Fast reproduction (default):** rebuilds the four tuned estimators from the best parameters recorded during the original training-only walk-forward searches. It still reruns feature construction, walk-forward diagnostics, model comparison, the protected final holdout, and the core figures.
+- **Full tuning:** set `FULL_TUNING = True` to repeat every `GridSearchCV` search. This performs **70,810 cross-validation fits** and can take several hours depending on the machine.
+
+The fast path does not use holdout results to select parameters; it reuses parameters that were originally selected from the training/CV period.
+
 ## Reproducing the analysis
 
 Python 3.10 or later is recommended.
@@ -94,7 +107,7 @@ pip install -r requirements.txt
 jupyter lab notebooks/spy_next_day_signal_research.ipynb
 ```
 
-Run the notebook from top to bottom. Internet access is required for Yahoo Finance and FRED downloads. Full hyperparameter searches are computationally intensive.
+Run the notebook from top to bottom. Internet access is required for Yahoo Finance and FRED downloads. Leave `FULL_TUNING = False` for the recommended reviewer-friendly run, or change it to `True` for an exhaustive research rerun.
 
 ## Main limitations
 
