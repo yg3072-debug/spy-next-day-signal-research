@@ -1,0 +1,11 @@
+metric,value,notes
+accuracy,0.393204,Protected chronological holdout
+balanced_accuracy,0.398907,Protected chronological holdout
+macro_f1,0.377100,Protected chronological holdout
+annualized_return,0.074779,Before transaction costs
+annualized_volatility,0.109168,Before transaction costs
+sharpe_ratio,0.684985,Zero risk-free rate assumption
+maximum_drawdown,-0.095517,Log-return strategy curve
+active_trade_hit_rate,0.513514,Calculated on Long and Short signals
+active_trade_rate,0.718447,Share of non-Flat predictions
+
