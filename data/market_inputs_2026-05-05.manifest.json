@@ -1,0 +1,47 @@
+{
+  "snapshot_file": "market_inputs_2026-05-05.csv",
+  "sha256": "d4625e4b58739080520150b5ecfeaf1e6967185f628bc6611129efecc4db4f5d",
+  "created_at_utc": "2026-08-15T21:21:07.372163+00:00",
+  "source_window": {
+    "start_inclusive": "2022-01-01",
+    "end_exclusive": "2026-05-06"
+  },
+  "first_observation": "2022-01-03",
+  "last_observation": "2026-05-05",
+  "rows": 1088,
+  "columns": [
+    "Open",
+    "High",
+    "Low",
+    "Price",
+    "Volume",
+    "VIX",
+    "DXY",
+    "TNX",
+    "OIL",
+    "DGS2",
+    "DGS10",
+    "QQQ_Price",
+    "IWM_Price",
+    "DIA_Price"
+  ],
+  "sources": {
+    "Yahoo Finance": [
+      "SPY",
+      "^VIX",
+      "DX-Y.NYB",
+      "^TNX",
+      "CL=F",
+      "QQQ",
+      "IWM",
+      "DIA"
+    ],
+    "FRED": [
+      "DGS2",
+      "DGS10"
+    ]
+  },
+  "yfinance_version": "0.2.65",
+  "yahoo_download_method": "v8 chart endpoint with auto-adjust equivalent",
+  "pandas_version": "2.2.3"
+}
