@@ -8,5 +8,6 @@ __pycache__/
 .vscode/
 data/raw/
 data/processed/
+data/*.tmp
 *.log
-
+*.html
