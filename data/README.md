@@ -16,3 +16,7 @@ python scripts/freeze_market_data.py
 ```
 
 A refresh can change historical adjusted prices and must be treated as a new research run. Regenerate every result and update the manifest, result files, and README together.
+
+The separate `nlp/` directory contains frozen derived inputs for the exploratory
+Trump-post ablation. Its raw post corpus is intentionally excluded; see
+`nlp/README.md` for sourcing, alignment, and interpretation limits.
