@@ -1,0 +1,44 @@
+{
+  "name": "Trump Truth Social NLP exploratory extension",
+  "frozen_on": "2026-08-15",
+  "source": {
+    "archive_site": "https://trumpstruth.org",
+    "account": "@realDonaldTrump",
+    "first_archive_date": "2024-07-13",
+    "last_archive_date": "2026-04-23",
+    "raw_archive_rows": 14145,
+    "usable_text_rows": 10396,
+    "raw_cleaned_sha256": "dee4ab0b41f709bc845fb7673147901abb3cac941992208a2d4aa5c80a3f26bd",
+    "raw_text_committed": false
+  },
+  "artifacts": [
+    {
+      "path": "data/nlp/trump_nlp_features_lag1.csv",
+      "rows": 646,
+      "columns": 12,
+      "first_date": "2024-07-13",
+      "last_date": "2026-04-23",
+      "sha256": "a16d8294adef69b0db833e848393080cb07c13e91235e2963c6550d170ebbee2"
+    },
+    {
+      "path": "data/nlp/trump_nlp_modeling_table.csv",
+      "rows": 1027,
+      "columns": 37,
+      "first_date": "2022-03-30",
+      "last_date": "2026-05-04",
+      "sha256": "30a0913ddb2c4927a14de0486d106f119b5a88d41a943c7cf3dc66bec5e1a639"
+    }
+  ],
+  "evaluation_window": {
+    "first_session": "2024-07-15",
+    "last_session": "2026-04-23",
+    "sessions": 446,
+    "validation": "five expanding-window folds with a one-session gap",
+    "holdout_fraction": 0.2
+  },
+  "notes": [
+    "All NLP feature names ending in _lag1 use prior-calendar-day information.",
+    "The raw post corpus is intentionally excluded from the repository.",
+    "This extension is separate from the canonical main-model holdout."
+  ]
+}

@@ -9,5 +9,8 @@ __pycache__/
 data/raw/
 data/processed/
 data/*.tmp
+data/nlp/*.tmp
+trump_archive_*.csv
+changed_rows_preview.csv
 *.log
 *.html
