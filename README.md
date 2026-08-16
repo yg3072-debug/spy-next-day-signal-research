@@ -6,13 +6,15 @@ An end-to-end, leakage-aware machine-learning study of next-trading-day directio
 - **Flat:** movement is too small to justify directional exposure
 - **Short:** sufficiently negative volatility-adjusted next-day return
 
-The emphasis is on a defensible research process: frozen inputs, chronological validation, train-only feature selection and tuning, explicit baselines, and one protected final-holdout evaluation.
+The emphasis is on a defensible research process: frozen inputs, chronological validation, train-only feature selection and tuning, explicit baselines, and one protected final-holdout evaluation. A separate exploratory module tests whether lagged topic features from archived Donald Trump Truth Social posts add information beyond the selected market features.
 
 > Research prototype for educational purposes only. Results are historical, exclude trading costs, and are not investment advice.
 
 ## Research question
 
 Can market, volatility, macroeconomic, and cross-market information available at day \(t\) support a robust Long/Flat/Short decision for SPY on trading day \(t+1\)?
+
+Secondary extension: during the period covered by the public post archive, do prior-calendar-day Trump post activity and market-topic counts improve a controlled chronological baseline?
 
 ## Reproducibility first
 
@@ -26,6 +28,8 @@ This repository now prevents that drift:
 - A calendar gate requires exactly 1,027 complete NYSE modeling sessions from March 30, 2022 through May 4, 2026.
 - The fast path uses single-process execution and fixed random seeds for reviewer-friendly behavior.
 - `scripts/validate_repository.py` checks the snapshot, manifest, and notebook defaults without training the models.
+- `data/nlp/manifest.json` freezes checksums and provenance for the derived Trump-post feature table and modeling table.
+- The complete post corpus is not redistributed; collection and cleaning scripts write raw text only to ignored local paths.
 
 The canonical snapshot SHA-256 is:
 
@@ -63,6 +67,14 @@ The target is the next-day SPY log return divided by 20-day historical volatilit
 - Logistic Regression, Random Forest, XGBoost, and LightGBM compared with a majority-class baseline
 - Balanced accuracy, Macro F1, fold stability, train-validation gaps, and trading diagnostics used together for model selection
 
+### Exploratory Trump-post NLP extension
+
+The extension uses an independent public archive of posts from Donald Trump's Truth Social account. The original collection contained 14,145 unique archive records from July 13, 2024 through April 23, 2026, of which 10,396 had usable text after encoding repair and cleaning. The committed inputs contain only derived features and a modeling table, not the post corpus.
+
+Daily features include prior-day post count, total market-topic score, market-related post share, and topic scores for trade/tariffs, rates/Federal Reserve, inflation, geopolitics/China, energy/oil, economy/markets, legal/regulation, and election/policy. Every text feature is shifted by one calendar day before it is aligned to the market table. A standalone ablation then compares the same class-weighted Logistic Regression with the 21 selected market features versus market features plus the lagged text variables.
+
+This module is intentionally separate from the canonical LightGBM selection. It uses five expanding-window folds with a one-session gap and a controlled final 20% holdout over the 446-session archive-coverage window.
+
 ## Canonical holdout results
 
 The tuned LightGBM model was selected from walk-forward CV evidence and then evaluated once on the protected 206-day holdout. These numbers were regenerated from the committed snapshot with the validated software stack in `requirements.txt`.
@@ -87,6 +99,26 @@ The confusion matrix makes the classification limitation visible: the model iden
 
 ![Final holdout confusion matrix](assets/final_holdout_confusion_matrix.png)
 
+## Exploratory NLP ablation results
+
+The five expanding-window means show a small improvement in Macro F1 and accuracy, but almost no change in balanced accuracy. Fold dispersion overlaps substantially, so the result is not evidence of a stable incremental signal.
+
+| Model | CV balanced accuracy | CV Macro F1 | CV accuracy |
+|---|---:|---:|---:|
+| Market only | 41.95% | 36.19% | 41.08% |
+| Market + Trump NLP | 42.01% | 36.94% | 44.05% |
+
+On the final 90-session chronological holdout within the archive-coverage period, the NLP specification performed better in this one split:
+
+| Model | Holdout balanced accuracy | Holdout Macro F1 | Holdout accuracy |
+|---|---:|---:|---:|
+| Market only | 34.09% | 32.40% | 34.44% |
+| Market + Trump NLP | 39.32% | 38.50% | 40.00% |
+
+![Exploratory Trump NLP ablation](assets/trump_nlp_cv_comparison.png)
+
+These figures are a sensitivity analysis, not a replacement for the canonical holdout. The period is short and politically specific, several frozen topic columns are constant zero, and the stronger final split is not sufficient to establish robustness or causality.
+
 ## Repository structure
 
 ```text
@@ -97,9 +129,15 @@ The confusion matrix makes the classification limitation visible: the model iden
 │   ├── feature_importance_top15.png
 │   ├── final_holdout_confusion_matrix.png
 │   ├── final_holdout_cumulative_return.png
-│   └── final_signal_distribution.png
+│   ├── final_signal_distribution.png
+│   └── trump_nlp_cv_comparison.png
 ├── data/
 │   ├── README.md
+│   ├── nlp/
+│   │   ├── README.md
+│   │   ├── manifest.json
+│   │   ├── trump_nlp_features_lag1.csv
+│   │   └── trump_nlp_modeling_table.csv
 │   ├── market_inputs_2026-05-05.csv
 │   └── market_inputs_2026-05-05.manifest.json
 ├── notebooks/
@@ -109,9 +147,15 @@ The confusion matrix makes the classification limitation visible: the model iden
 │   ├── final_test_confusion_matrix.csv
 │   ├── final_test_metrics.csv
 │   ├── run_manifest.json
-│   └── selected_features.csv
+│   ├── selected_features.csv
+│   ├── trump_nlp_cv_metrics.csv
+│   └── trump_nlp_holdout_metrics.csv
 ├── scripts/
 │   ├── freeze_market_data.py
+│   ├── nlp/
+│   │   ├── clean_trump_archive.py
+│   │   ├── evaluate_trump_nlp.py
+│   │   └── scrape_trump_truth_archive.py
 │   └── validate_repository.py
 ├── LICENSE
 ├── README.md
@@ -149,6 +193,14 @@ FULL_TUNING = False
 
 The default analysis does not download market data because it reads the committed snapshot. Internet access is still needed to install dependencies.
 
+Run the standalone Trump-post NLP ablation with:
+
+```bash
+python scripts/nlp/evaluate_trump_nlp.py
+```
+
+This command uses the committed derived tables and regenerates the NLP result CSVs and comparison figure. Raw post collection is optional and documented in `data/nlp/README.md`.
+
 ## Execution modes
 
 ### Fast reproduction — recommended
@@ -178,7 +230,10 @@ This replaces the canonical snapshot and manifest. Because adjusted histories ar
 - Feature screening includes a final manual redundancy decision.
 - Classification performance remains modest, despite stronger trading-oriented metrics in this particular holdout.
 - Tree predictions and trading metrics can be sensitive to small input or software-version changes.
-- Text sentiment and intraday microstructure data are not included.
+- The canonical model does not use text features; the Trump-post NLP module is a separate short-window ablation.
+- The raw post corpus is not redistributed, and the frozen topic table contains four zero-variance topic columns that the evaluator removes before fitting.
+- The NLP coverage period is politically specific and too short to support a causal or deployable trading claim.
+- Intraday microstructure data are not included.
 
 ## Planned research extension
 

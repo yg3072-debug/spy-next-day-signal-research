@@ -14,3 +14,9 @@ nbformat==5.10.4
 nbconvert==7.16.6
 ipykernel==6.30.1
 jupyterlab>=4.1,<5
+
+# Optional archive collection and text cleaning for the NLP extension
+requests>=2.32,<3
+beautifulsoup4>=4.13,<5
+lxml>=5.3,<7
+ftfy>=6.3,<7
