@@ -318,7 +318,7 @@ def main() -> int:
             name: (w.loc[oos] * r_o2c.loc[oos] - 2 * c * w.loc[oos].abs())
             for name, w in o2c_benchmarks(d).items()
         }
-        excess["SPY buy-and-hold (C2C)"] = r_c2c.loc[oos] - rf_all.loc[oos]
+        excess["SPY buy-and-hold"] = r_c2c.loc[oos] - rf_all.loc[oos]
 
         ref_long = excess["Always-long O2C"]
         ref_cash = excess["Cash"]
