@@ -1,0 +1,299 @@
+"""Compute every benchmark the strategy must be measured against.
+
+Benchmarks are evaluated under the same execution specification, the same cost
+model, and the same window as the strategy, and reported on returns in excess of
+cash. Nothing here depends on a model, so these numbers are fixed before any
+strategy exists and cannot be adjusted after seeing a result.
+
+Return accounting
+-----------------
+Cash.  A flat position earns the short Treasury bill rate. Interest accrues on
+settled end-of-day balances over actual calendar days, so a Friday-to-Monday gap
+earns three days. The rate dated t is published by H.15 on the following business
+day, so accrual for session t uses the rate dated t-1.
+
+Primary specification (intraday, Open to Close).  The account is flat at every
+close, so its end-of-day balance is whole and earns the full daily cash return
+regardless of the intraday position. Total return is therefore
+
+    R_total = rf + w * R_o2c - 2c|w|          excess: w * R_o2c - 2c|w|
+
+with cost 2c per active day because entry at the open and exit at the close are a
+complete round trip, not a rebalance.
+
+Alternative specification (overnight, Close to Close).  Positions are held over
+the close, so the capital is deployed and earns no cash return:
+
+    excess = w * (R_c2c - rf) - c|dw| - borrow * max(-w, 0)
+
+Sharpe ratios use excess returns throughout. Cash has zero excess return and zero
+excess volatility, so its Sharpe is undefined and is reported as such rather than
+as zero.
+"""
+
+from __future__ import annotations
+
+import glob
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+INITIAL_TRAIN_SESSIONS = 1000          # sessions reserved before out-of-sample begins
+COST_BPS_PER_SIDE = 2.0                # base case; c per side, 2c per round trip
+COST_SCENARIOS_BPS = [0.0, 1.0, 2.0, 5.0, 10.0]
+BORROW_ANNUAL = 0.0025                 # 25 bp/yr, SPY general collateral
+TRADING_DAYS = 252
+
+
+# --------------------------------------------------------------------------- data
+
+def load_snapshot() -> tuple[pd.DataFrame, dict]:
+    csv = sorted(glob.glob(str(ROOT / "data" / "market_inputs_*.csv")))[-1]
+    manifest = json.loads(Path(csv.replace(".csv", ".manifest.json")).read_text("utf-8"))
+    frame = pd.read_csv(csv, index_col="Date", parse_dates=True)
+    return frame, manifest
+
+
+def cash_return(frame: pd.DataFrame, column: str = "DGS3MO") -> pd.Series:
+    """Daily cash return, accrued over actual calendar days on a 365-day basis.
+
+    DGS3MO is a constant-maturity bond-equivalent yield, so it compounds directly.
+    The one-session shift reflects the H.15 publication lag: the rate dated t is
+    not known until the next business day.
+    """
+    annual = frame[column].shift(1) / 100.0
+    days = frame.index.to_series().diff().dt.days
+    rf = (1.0 + annual) ** (days / 365.0) - 1.0
+    return rf.fillna(0.0)
+
+
+# ------------------------------------------------------------------- performance
+
+def performance(excess: pd.Series, total: pd.Series, weights: pd.Series) -> dict:
+    """Metrics from a realised excess-return series and its total-return twin."""
+    n = len(excess)
+    years = n / TRADING_DAYS
+    equity = (1.0 + total).cumprod()
+    drawdown = equity / equity.cummax() - 1.0
+    excess_vol = excess.std(ddof=1) * np.sqrt(TRADING_DAYS)
+
+    downside = excess[excess < 0]
+    sortino = (
+        excess.mean() * TRADING_DAYS / (downside.std(ddof=1) * np.sqrt(TRADING_DAYS))
+        if len(downside) > 1 and downside.std(ddof=1) > 0
+        else np.nan
+    )
+    cagr = equity.iloc[-1] ** (1.0 / years) - 1.0
+    max_dd = drawdown.min()
+
+    return {
+        "sessions": n,
+        "years": round(years, 2),
+        "ann_mean_excess": excess.mean() * TRADING_DAYS,
+        "ann_mean_total": total.mean() * TRADING_DAYS,
+        "cagr_total": cagr,
+        "ann_vol_excess": excess_vol,
+        "sharpe_excess": excess.mean() * TRADING_DAYS / excess_vol if excess_vol > 0 else np.nan,
+        "sortino_excess": sortino,
+        "max_drawdown": max_dd,
+        "calmar": cagr / abs(max_dd) if max_dd < 0 else np.nan,
+        "terminal_wealth": equity.iloc[-1],
+        "participation_rate": (weights != 0).mean(),
+        "avg_net_exposure": weights.mean(),
+        "avg_gross_exposure": weights.abs().mean(),
+        "turnover_per_year": weights.diff().abs().fillna(0).mean() * TRADING_DAYS,
+        "hit_rate_active": np.nan,
+    }
+
+
+def breakeven_cost_o2c(weights: pd.Series, r_o2c: pd.Series) -> float:
+    """One-side cost in bp at which the intraday specification's excess return is zero.
+
+    Closed form: mean(w*r) - 2c*mean(|w|) = 0  =>  c* = mean(w*r) / (2*mean(|w|)).
+    """
+    gross = (weights * r_o2c).mean()
+    exposure = weights.abs().mean()
+    return np.nan if exposure == 0 else gross / (2.0 * exposure) * 1e4
+
+
+def run_o2c(weights: pd.Series, r_o2c: pd.Series, rf: pd.Series, cost_bps: float) -> dict:
+    """Intraday specification: full round trip on every active day."""
+    c = cost_bps / 1e4
+    excess = weights * r_o2c - 2.0 * c * weights.abs()
+    total = rf + excess
+    stats = performance(excess, total, weights)
+    stats["breakeven_cost_bps_per_side"] = breakeven_cost_o2c(weights, r_o2c)
+    active = weights != 0
+    if active.any():
+        stats["hit_rate_active"] = (np.sign(weights[active]) == np.sign(r_o2c[active])).mean()
+    return stats
+
+
+def run_c2c(weights: pd.Series, r_c2c: pd.Series, rf: pd.Series, cost_bps: float) -> dict:
+    """Overnight specification: cost on position changes, borrow on shorts."""
+    c = cost_bps / 1e4
+    dw = weights.diff()
+    dw.iloc[0] = weights.iloc[0]                       # opening the initial position costs too
+    borrow = (BORROW_ANNUAL / 365.0) * np.maximum(-weights, 0.0)
+    excess = weights * (r_c2c - rf) - c * dw.abs() - borrow
+    total = rf + excess
+    stats = performance(excess, total, weights)
+    active = weights != 0
+    if active.any():
+        stats["hit_rate_active"] = (np.sign(weights[active]) == np.sign(r_c2c[active])).mean()
+    return stats
+
+
+# -------------------------------------------------------------------- benchmarks
+
+def o2c_benchmarks(d: pd.DataFrame) -> dict[str, pd.Series]:
+    """Weight series for every intraday benchmark. All inputs are lagged."""
+    r_o2c = np.log(d.Close / d.Open)                   # sign only, used for direction rules
+    r_c2c = np.log(d.Close / d.Close.shift(1))
+    one = pd.Series(1.0, index=d.index)
+    return {
+        "Cash": one * 0.0,
+        "Always-long O2C": one,
+        "Always-short O2C": -one,
+        "Prior-day O2C direction": np.sign(r_o2c.shift(1)).fillna(0.0),
+        "Prior-day C2C direction": np.sign(r_c2c.shift(1)).fillna(0.0),
+        "5-day momentum": np.sign(r_c2c.rolling(5).sum().shift(1)).fillna(0.0),
+        "5-day reversal": -np.sign(r_c2c.rolling(5).sum().shift(1)).fillna(0.0),
+    }
+
+
+def c2c_benchmarks(d: pd.DataFrame) -> dict[str, pd.Series]:
+    r_c2c = np.log(d.Close / d.Close.shift(1))
+    one = pd.Series(1.0, index=d.index)
+    return {
+        "SPY buy-and-hold": one,
+        "Prior-day C2C direction (C2C spec)": np.sign(r_c2c.shift(1)).fillna(0.0),
+        "5-day momentum (C2C spec)": np.sign(r_c2c.rolling(5).sum().shift(1)).fillna(0.0),
+        "5-day reversal (C2C spec)": -np.sign(r_c2c.rolling(5).sum().shift(1)).fillna(0.0),
+    }
+
+
+def decompose_vs_always_long(
+    weights: pd.Series, r_o2c: pd.Series, cost_bps: float
+) -> dict:
+    """Split the excess over always-long O2C into timing and cost saving.
+
+        R_strategy - R_always_long = (w - 1) * R_o2c  +  2c * (1 - |w|)
+
+    The first term is what the direction calls earn or lose; the second is money
+    saved by not trading. A strategy with no predictive ability can still beat a
+    loss-making always-on benchmark purely through the second term, so the two
+    must be reported apart.
+    """
+    c = cost_bps / 1e4
+    timing = (weights - 1.0) * r_o2c
+    saving = 2.0 * c * (1.0 - weights.abs())
+    total = timing + saving
+    return {
+        "ann_gross_timing": timing.mean() * TRADING_DAYS,
+        "ann_cost_saving": saving.mean() * TRADING_DAYS,
+        "ann_net_excess_vs_always_long": total.mean() * TRADING_DAYS,
+    }
+
+
+def volatility_matched(returns: pd.Series, target_ann_vol: float) -> pd.Series:
+    """Scale a return series to a target annualised volatility.
+
+    Sharpe is invariant to this scaling, so a volatility-matched benchmark answers a
+    question about return and drawdown levels, not about risk-adjusted ranking. The
+    target is the strategy's realised volatility and is therefore supplied once a
+    strategy exists; the always-long O2C volatility is used here as a placeholder.
+    """
+    realised = returns.std(ddof=1) * np.sqrt(TRADING_DAYS)
+    return returns * (target_ann_vol / realised) if realised > 0 else returns
+
+
+# -------------------------------------------------------------------------- main
+
+def main() -> int:
+    d, manifest = load_snapshot()
+    rf_all = cash_return(d)
+
+    r_o2c = pd.Series(d.Close.values / d.Open.values - 1.0, index=d.index)   # simple
+    r_c2c = d.Close.pct_change().fillna(0.0)
+
+    windows = {
+        "full": d.index,
+        "oos": d.index[INITIAL_TRAIN_SESSIONS:],
+    }
+
+    rows = []
+    for wname, idx in windows.items():
+        for cost in COST_SCENARIOS_BPS:
+            for name, w in o2c_benchmarks(d).items():
+                stats = run_o2c(w.loc[idx], r_o2c.loc[idx], rf_all.loc[idx], cost)
+                rows.append({"window": wname, "spec": "O2C", "benchmark": name,
+                             "cost_bps_per_side": cost, **stats})
+            for name, w in c2c_benchmarks(d).items():
+                stats = run_c2c(w.loc[idx], r_c2c.loc[idx], rf_all.loc[idx], cost)
+                rows.append({"window": wname, "spec": "C2C", "benchmark": name,
+                             "cost_bps_per_side": cost, **stats})
+
+    table = pd.DataFrame(rows)
+    outdir = ROOT / "results"
+    outdir.mkdir(exist_ok=True)
+    table.to_csv(outdir / "benchmark_comparison.csv", index=False, float_format="%.8g")
+
+    # Cash context, for the write-up.
+    oos = windows["oos"]
+    cash_meta = {
+        "snapshot_sha256": manifest["sha256"],
+        "initial_train_sessions": INITIAL_TRAIN_SESSIONS,
+        "oos_first_session": str(oos.min().date()),
+        "oos_last_session": str(oos.max().date()),
+        "oos_sessions": int(len(oos)),
+        "base_cost_bps_per_side": COST_BPS_PER_SIDE,
+        "base_cost_bps_round_trip": 2 * COST_BPS_PER_SIDE,
+        "rf_series": "DGS3MO, bond-equivalent yield, actual/365 calendar-day accrual, lagged one session",
+        "rf_mean_annual_pct_full": float(d.DGS3MO.mean()),
+        "rf_mean_annual_pct_oos": float(d.loc[oos, "DGS3MO"].mean()),
+        "cash_cumulative_return_oos": float((1 + rf_all.loc[oos]).prod() - 1),
+    }
+    (outdir / "benchmark_context.json").write_text(json.dumps(cash_meta, indent=2), "utf-8")
+
+    # ------------------------------------------------------------------ report
+    pd.set_option("display.width", 200, "display.max_columns", 50)
+    base = table[(table.window == "oos") & (table.cost_bps_per_side == COST_BPS_PER_SIDE)]
+    cols = ["spec", "benchmark", "ann_mean_excess", "cagr_total", "ann_vol_excess",
+            "sharpe_excess", "max_drawdown", "calmar", "participation_rate",
+            "hit_rate_active", "breakeven_cost_bps_per_side"]
+
+    print(f"OOS window        {cash_meta['oos_first_session']} .. {cash_meta['oos_last_session']}"
+          f"  ({cash_meta['oos_sessions']} sessions)")
+    print(f"Base cost         {COST_BPS_PER_SIDE:g} bp per side = {2*COST_BPS_PER_SIDE:g} bp round trip")
+    print(f"Cash rate (OOS)   {cash_meta['rf_mean_annual_pct_oos']:.2f}% mean annual, "
+          f"cumulative {cash_meta['cash_cumulative_return_oos']:.2%}")
+    print(f"\n{'='*150}\nBENCHMARKS at base cost, out-of-sample window\n{'='*150}")
+    print(base[cols].to_string(index=False, float_format=lambda v: f"{v:9.4f}"))
+
+    print(f"\n{'='*150}\nAlways-long O2C across cost scenarios (out-of-sample)\n{'='*150}")
+    al = table[(table.window == "oos") & (table.benchmark == "Always-long O2C")]
+    print(al[["cost_bps_per_side", "ann_mean_excess", "cagr_total", "ann_vol_excess",
+              "sharpe_excess", "max_drawdown"]].to_string(index=False,
+              float_format=lambda v: f"{v:10.4f}"))
+
+    print(f"\n{'='*150}\nDecomposition check: what a no-skill flat strategy earns against always-long O2C\n{'='*150}")
+    print("A strategy that never trades has w = 0 everywhere. Its entire advantage over the")
+    print("always-long benchmark is cost saving, with zero timing contribution.\n")
+    zero = pd.Series(0.0, index=oos)
+    for cost in (1.0, 2.0, 5.0):
+        dec = decompose_vs_always_long(zero, r_o2c.loc[oos], cost)
+        print(f"  c={cost:g} bp/side   gross timing {dec['ann_gross_timing']:+.2%}"
+              f"   cost saving {dec['ann_cost_saving']:+.2%}"
+              f"   net {dec['ann_net_excess_vs_always_long']:+.2%}")
+
+    print(f"\nWrote {outdir/'benchmark_comparison.csv'}  ({len(table)} rows)")
+    print(f"Wrote {outdir/'benchmark_context.json'}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
