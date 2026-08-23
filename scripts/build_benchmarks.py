@@ -33,12 +33,21 @@ as zero.
 
 from __future__ import annotations
 
+import argparse
 import glob
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.features import build_features  # noqa: E402
+from src.stats import (  # noqa: E402
+    ann_mean, bootstrap_difference, bootstrap_statistic,
+    jobson_korkie_memmel, politis_white_block, sharpe,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 INITIAL_TRAIN_SESSIONS = 1000          # sessions reserved before out-of-sample begins
@@ -214,16 +223,25 @@ def volatility_matched(returns: pd.Series, target_ann_vol: float) -> pd.Series:
 # -------------------------------------------------------------------------- main
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--reps", type=int, default=10_000, help="bootstrap resamples; 0 to skip")
+    ap.add_argument("--block", type=float, default=10.0, help="mean block length in sessions")
+    args = ap.parse_args()
+    reps, block = args.reps, args.block
+
     d, manifest = load_snapshot()
     rf_all = cash_return(d)
 
     r_o2c = pd.Series(d.Close.values / d.Open.values - 1.0, index=d.index)   # simple
     r_c2c = d.Close.pct_change().fillna(0.0)
 
-    windows = {
-        "full": d.index,
-        "oos": d.index[INITIAL_TRAIN_SESSIONS:],
-    }
+    # The out-of-sample window must be identical to the strategy's. Features need a
+    # warm-up before any row is complete, so the initial training block is counted
+    # from the first complete feature row, not from the first session in the file.
+    features, _ = build_features(d)
+    modelling_index = features.dropna().index
+    oos_index = modelling_index[INITIAL_TRAIN_SESSIONS:]
+    windows = {"full": d.index, "oos": oos_index}
 
     rows = []
     for wname, idx in windows.items():
@@ -289,6 +307,57 @@ def main() -> int:
         print(f"  c={cost:g} bp/side   gross timing {dec['ann_gross_timing']:+.2%}"
               f"   cost saving {dec['ann_cost_saving']:+.2%}"
               f"   net {dec['ann_net_excess_vs_always_long']:+.2%}")
+
+    # ------------------------------------------------------------------ intervals
+    if reps:
+        print(f"\n{'='*150}")
+        print(f"Stationary bootstrap, {reps:,} resamples, mean block {block:g} sessions")
+        print(f"{'='*150}")
+        c = COST_BPS_PER_SIDE / 1e4
+        excess = {
+            name: (w.loc[oos] * r_o2c.loc[oos] - 2 * c * w.loc[oos].abs())
+            for name, w in o2c_benchmarks(d).items()
+        }
+        excess["SPY buy-and-hold (C2C)"] = r_c2c.loc[oos] - rf_all.loc[oos]
+
+        ref_long = excess["Always-long O2C"]
+        ref_cash = excess["Cash"]
+        irows = []
+        for name, e in excess.items():
+            flat = e.std(ddof=1) == 0
+            row = {
+                "benchmark": name,
+                "politis_white_block": np.nan if flat else politis_white_block(e),
+                "sharpe": np.nan if flat else sharpe(e.to_numpy()),
+            }
+            if not flat:
+                sr = bootstrap_statistic(e, sharpe, block, reps)
+                row["sharpe_ci_low"], row["sharpe_ci_high"] = sr["ci_low"], sr["ci_high"]
+            am = bootstrap_statistic(e, ann_mean, block, reps)
+            row["ann_mean_excess"] = am["point"]
+            row["ann_mean_ci_low"], row["ann_mean_ci_high"] = am["ci_low"], am["ci_high"]
+
+            if name not in ("Always-long O2C", "Cash") and not flat:
+                dl = bootstrap_difference(e, ref_long, sharpe, block, reps)
+                row["d_sharpe_vs_long"] = dl["point"]
+                row["d_sharpe_vs_long_ci_low"] = dl["ci_low"]
+                row["d_sharpe_vs_long_p_le_0"] = dl["p_le_zero"]
+                row["jk_memmel_p"] = jobson_korkie_memmel(e, ref_long)["p_two_sided"]
+            if name != "Cash":
+                dc = bootstrap_difference(e, ref_cash, ann_mean, block, reps)
+                row["d_annmean_vs_cash_ci_low"] = dc["ci_low"]
+                row["d_annmean_vs_cash_p_le_0"] = dc["p_le_zero"]
+            irows.append(row)
+
+        intervals = pd.DataFrame(irows)
+        intervals.to_csv(outdir / "benchmark_intervals.csv", index=False, float_format="%.8g")
+        show = [
+            "benchmark", "politis_white_block", "sharpe", "sharpe_ci_low", "sharpe_ci_high",
+            "d_sharpe_vs_long", "d_sharpe_vs_long_ci_low", "d_sharpe_vs_long_p_le_0",
+            "d_annmean_vs_cash_ci_low",
+        ]
+        print(intervals[show].to_string(index=False, float_format=lambda v: f"{v:8.3f}"))
+        print(f"\nWrote {outdir/'benchmark_intervals.csv'}")
 
     print(f"\nWrote {outdir/'benchmark_comparison.csv'}  ({len(table)} rows)")
     print(f"Wrote {outdir/'benchmark_context.json'}")

@@ -5,7 +5,7 @@ and every transformation applied between the two. A field may only enter a featu
 session *t* if the whole pipeline below is complete before the decision point for *t*.
 
 **Snapshot:** `data/market_inputs_2026-08-21.csv`
-**SHA-256:** `5456f9f8b3e1f9b2e0cd2877e53f8d2b1eb0db630d1e1488522567b4ea897d92`
+**SHA-256:** `103a837de14b5226283c2b13f6ff0781def29565eec9f9d4ae8fc23510ffa507`
 **Sessions:** 2,926 — 2015-01-02 to 2026-08-21 (11.6 years), 23 early closes
 **Manifest:** `data/market_inputs_2026-08-21.manifest.json`
 **Reproduce:** `python scripts/freeze_market_data.py` · **Check:** `... --verify`
@@ -127,10 +127,13 @@ Two consequences worth stating explicitly:
 1. **The primary target is adjustment-invariant.** `log(Close_t / Open_t)` compares two prices
    from the same session, and any multiplicative adjustment factor applies equally to both, so
    it cancels. A later revision to the dividend history cannot move the primary target.
-2. **Features mixing adjusted prices with raw volume are not invariant.** Any product of a
-   price return and a volume term inherits the adjustment factor from one leg only. Such
-   features must be flagged in the feature dictionary and their sensitivity checked against
-   the WTI/Brent and re-download sensitivity runs.
+2. **Volume is the one asymmetry.** A dividend revision rescales price but not volume, and
+   because every volume feature here is a ratio or a z-score of raw volume, that asymmetry
+   cancels. A **split** does not cancel: it changes Volume while leaving the adjusted price
+   continuous, distorting any trailing volume window that spans the split date. Verified
+   against the dividend and split history: SPY, QQQ, IWM and DIA have no split inside this
+   sample, the most recent being IWM in June 2005. `src/features.py` records the exposure per
+   feature and `tests/test_features.py` asserts each claim by rescaling the price history.
 
 ---
 
