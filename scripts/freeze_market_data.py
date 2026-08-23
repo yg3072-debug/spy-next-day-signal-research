@@ -58,7 +58,11 @@ YAHOO_SINGLE = {
     "IWM": ("IWM_Close", "Close"),
     "DIA": ("DIA_Close", "Close"),
 }
-FRED_SERIES = ["DGS2", "DGS10"]
+# DGS3MO is the cash / risk-free proxy. It is a constant-maturity bond-equivalent
+# yield (investment basis, actual/365), so it can be compounded directly. DTB3 is
+# the secondary-market bill rate on a 360-day DISCOUNT basis and needs converting
+# before use; it is carried only as a sensitivity check on the cash series.
+FRED_SERIES = ["DGS3MO", "DTB3", "DGS2", "DGS10"]
 
 # Series that genuinely trade on a different calendar from NYSE equities and may
 # therefore need carrying forward. SPY itself must be complete on every session.

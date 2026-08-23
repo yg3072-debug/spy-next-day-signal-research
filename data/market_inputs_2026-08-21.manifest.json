@@ -1,7 +1,7 @@
 {
   "snapshot_file": "market_inputs_2026-08-21.csv",
-  "sha256": "5456f9f8b3e1f9b2e0cd2877e53f8d2b1eb0db630d1e1488522567b4ea897d92",
-  "frozen_at_utc": "2026-08-23T22:48:13.487410+00:00",
+  "sha256": "103a837de14b5226283c2b13f6ff0781def29565eec9f9d4ae8fc23510ffa507",
+  "frozen_at_utc": "2026-08-23T23:09:15.150216+00:00",
   "requested_window": {
     "start_inclusive": "2015-01-01",
     "end": "2026-08-21"
@@ -24,6 +24,8 @@
     "QQQ_Close",
     "IWM_Close",
     "DIA_Close",
+    "DGS3MO",
+    "DTB3",
     "DGS2",
     "DGS10",
     "is_half_day"
@@ -43,6 +45,8 @@
       "DIA"
     ],
     "FRED": [
+      "DGS3MO",
+      "DTB3",
       "DGS2",
       "DGS10"
     ]
@@ -117,6 +121,20 @@
       "native_rows": 2926,
       "missing_on_nyse_sessions": 0,
       "forward_filled": 0,
+      "unresolved": 0
+    },
+    "DGS3MO": {
+      "column": "DGS3MO",
+      "native_rows": 2910,
+      "missing_on_nyse_sessions": 21,
+      "forward_filled": 21,
+      "unresolved": 0
+    },
+    "DTB3": {
+      "column": "DTB3",
+      "native_rows": 2910,
+      "missing_on_nyse_sessions": 21,
+      "forward_filled": 21,
       "unresolved": 0
     },
     "DGS2": {
