@@ -1,13 +1,13 @@
 {
   "snapshot_sha256": "103a837de14b5226283c2b13f6ff0781def29565eec9f9d4ae8fc23510ffa507",
   "initial_train_sessions": 1000,
-  "oos_first_session": "2018-12-21",
+  "oos_first_session": "2019-03-21",
   "oos_last_session": "2026-08-21",
-  "oos_sessions": 1926,
+  "oos_sessions": 1866,
   "base_cost_bps_per_side": 2.0,
   "base_cost_bps_round_trip": 4.0,
   "rf_series": "DGS3MO, bond-equivalent yield, actual/365 calendar-day accrual, lagged one session",
   "rf_mean_annual_pct_full": 2.1402768284347236,
-  "rf_mean_annual_pct_oos": 2.8292782969885772,
-  "cash_cumulative_return_oos": 0.23698230706175982
+  "rf_mean_annual_pct_oos": 2.841929260450161,
+  "cash_cumulative_return_oos": 0.22967689487353615
 }
