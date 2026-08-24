@@ -237,8 +237,21 @@ def main() -> int:
     if args.verify:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         failures = []
-        for name, recorded in manifest["sha256"].items():
-            actual = sha256_of(DEST / name)
+        # The per-document text is third-party content and is not committed, so a
+        # fresh clone has the aggregates and not the sources. Verifying what is
+        # absent by design would fail every clone; verifying only what is present
+        # would let a missing aggregate pass silently. Both are reported.
+        recorded_all = {**manifest.get("derived_features", {}), **manifest["sha256"]}
+        for name, recorded in recorded_all.items():
+            path = DEST / name
+            if not path.exists():
+                if name in manifest.get("derived_features", {}):
+                    print(f"FAIL {name}  committed aggregate is missing")
+                    failures.append(name)
+                else:
+                    print(f"skip {name}  per-document source, not redistributed")
+                continue
+            actual = sha256_of(path)
             ok = actual == recorded
             print(f"{'ok  ' if ok else 'FAIL'} {name}  {actual}")
             if not ok:

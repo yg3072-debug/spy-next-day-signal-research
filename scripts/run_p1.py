@@ -43,6 +43,7 @@ from src.pipeline import (  # noqa: E402
 )
 from src.stats import TRADING_DAYS, bootstrap_statistic, sharpe  # noqa: E402
 from src.strategy import positions_from_expected_return  # noqa: E402
+from src.digest import sha256_bytes, sha256_of  # noqa: E402
 from src.execution import get_spec  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -318,7 +319,7 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / args.config).read_bytes())
-    config_sha = hashlib.sha256((ROOT / args.config).read_bytes()).hexdigest()
+    config_sha = sha256_of(ROOT / args.config)
 
     # An overlay never edits the frozen file. The P1 hash below is still the hash of
     # config/p1.yaml, and the overlay is recorded beside it with its own digest, so a
@@ -326,7 +327,7 @@ def main() -> int:
     overlay_sha = None
     if args.overlay:
         raw = (ROOT / args.overlay).read_bytes()
-        overlay_sha = hashlib.sha256(raw).hexdigest()
+        overlay_sha = sha256_bytes(raw, normalise=True)
         cfg = deep_merge(cfg, yaml.safe_load(raw) or {})
 
     # Parameters the specification owns are passed to it, not left at their

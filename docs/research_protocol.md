@@ -13,7 +13,7 @@ document; a change produces a new version and a new freeze.
 | Assumed execution cost | 2 bp per side, 4 bp round trip, plus intraday financing |
 | Trial structure | one confirmatory procedure, 24 pre-registered exploratory specifications |
 | Data snapshot SHA-256 | `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a` |
-| Configuration SHA-256 | `c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7` |
+| Configuration SHA-256 | `03b768265c809581b4d2fe17703f4b303a43476b4ea5b037f91ba8ed1b024696` |
 
 ---
 
@@ -606,7 +606,7 @@ Two kinds of sensitivity must therefore be distinguished, or the budget is breac
 
 | ID | Kind | Content |
 |---|---|---|
-| **P1** | **Confirmatory primary procedure** | `config/p1.yaml`, SHA `c219757b…` |
+| **P1** | **Confirmatory primary procedure** | `config/p1.yaml`, SHA `03b76826…` |
 | E1–E4 | Exploratory | Feature-group ablation: cross-market, macro, intraday, volume |
 | E5–E8 | Exploratory | Single model family fixed, no dynamic selection |
 | E9–E11 | Exploratory | Naive arg-max, fixed-quantile band, volatility targeting |
@@ -827,7 +827,7 @@ weekends.
 
 ## Appendix A · P1 configuration
 
-`config/p1.yaml`, **SHA-256 `c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7`**,
+`config/p1.yaml`, **SHA-256 `03b768265c809581b4d2fe17703f4b303a43476b4ea5b037f91ba8ed1b024696`**,
 recorded in every run manifest.
 
 ### A.1 Inner cross-validation
@@ -1030,6 +1030,19 @@ count — makes the freeze harder to check rather than easier. The state at free
 `protocol-v5-frozen` is not overwritten. v6 is a separate tag with a separate configuration
 hash, so the two states remain distinguishable. Both smoke runs are in
 `results/experiment_registry.csv` as `SMOKE-01` and `SMOKE-02`.
+
+**Erratum, 2026-08-24, on the configuration digest.** The digest recorded for
+`config/p1.yaml` was computed on a working copy with CRLF line terminators. The
+repository normalises text to LF, so a fresh clone produced a different digest and
+`verify_hashes.py` reported FAIL — on the check the whole freeze rests on, for a
+reason unrelated to the configuration. Digests of text artefacts are now computed
+on the canonical LF form (`src/digest.py`), which makes them a function of content
+rather than of a checkout setting. The recorded digest is
+`03b768265c809581b4d2fe17703f4b303a43476b4ea5b037f91ba8ed1b024696`; the earlier
+`c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7` is the same file
+with CRLF terminators, and the two were verified byte-identical after
+normalisation. **No configuration value changed.** Run manifests written before
+this change record the CRLF digest and are left as written.
 
 **Erratum, 2026-08-24, on §9.3's pre-open figure.** §9.3 states that not using the pre-open
 window "forgoes about 18.7% of posts being tradable one session earlier". That percentage is

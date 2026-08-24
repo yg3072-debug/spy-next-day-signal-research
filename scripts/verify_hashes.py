@@ -10,21 +10,16 @@ has not changed" from an assertion into something a reader can see.
 from __future__ import annotations
 
 import glob
-import hashlib
 import json
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 
-def sha256_of(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from src.digest import sha256_of  # noqa: E402  (canonical, line-ending independent)
 
 
 def main() -> int:
