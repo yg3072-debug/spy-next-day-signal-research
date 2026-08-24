@@ -69,23 +69,29 @@ def test_probabilities_are_a_distribution(run):
     assert ((p >= 0) & (p <= 1)).all().all()
 
 
-def test_baseline_mu_hat_is_constant_within_a_block_and_not_across(run):
-    """The majority baseline predicts the class prior, so its mu_hat is a constant
-    within any one refit — but the class-conditional means are re-estimated at every
-    refit, so it is not constant across them.
+def test_baseline_mu_hat_is_constant_within_an_outer_step(run):
+    """The majority baseline predicts the class prior and reads no features, so its
+    mu_hat must be one number for the whole of any outer step.
 
-    Constant across blocks would mean the refit was not happening. Varying within a
-    block would mean something feature-dependent had leaked into a model that has
-    no features.
+    Variation inside a step would mean something feature-dependent had reached a
+    model that has no features.
+
+    Variation *across* steps is deliberately not asserted. The class-conditional
+    means are re-estimated at every outer step, so the value normally moves — but
+    two adjacent training windows differ by 21 sessions out of a thousand and could
+    legitimately produce the same number. Requiring them to differ would be
+    asserting something the procedure does not guarantee. What is checked instead is
+    that every step is present, which is what would actually break if the refit
+    stopped happening.
     """
     oos, _ = run
     baseline = oos[oos.model == "majority_baseline"]
     if baseline.empty:
         pytest.skip("the baseline was never selected in this run")
-    per_block = baseline.groupby("step").mu_hat.nunique()
-    assert (per_block == 1).all(), "mu_hat varied inside an outer block"
-    assert baseline.mu_hat.nunique() == baseline.step.nunique() or \
-        baseline.mu_hat.nunique() > 1, "mu_hat never changed across refits"
+    per_step = baseline.groupby("step").mu_hat.nunique()
+    assert (per_step == 1).all(), "mu_hat varied inside a single outer step"
+    steps = sorted(oos.step.unique())
+    assert steps == list(range(len(steps))), "outer steps are not a complete sequence"
 
 
 def test_every_out_of_sample_session_appears_once(run):

@@ -7,7 +7,8 @@ side, 4 bp round trip, plus intraday financing.
 
 **Units.** Annualised mean returns and Sharpe ratios are stated in excess of cash. CAGR,
 terminal wealth and drawdown are computed from total portfolio returns including the cash leg.
-The two are not interchangeable and are not mixed within a row.
+The two conventions are explicitly identified by metric and are never used interchangeably. Both
+appear in the comparison table below, in different columns of the same row.
 
 ---
 
@@ -204,15 +205,27 @@ was a per-step constant. In 2019 it never cleared the cost band and participatio
 2020 the same kind of constant cleared it on **60%** of sessions, contributing −1.4% for the
 year.
 
-Two things moved between those two refits, and it is worth being precise about which mattered.
-The baseline's constant `mu_hat` rose from 2.78e-4 to 5.17e-4, up about 90%, because the 2020
-refit's training window carried a higher unconditional drift. Short rates collapsed over the
-same period, but the threshold narrowed only from 4.116e-4 to 4.006e-4, about 3%, because the
-band is dominated by the 4 bp execution round trip and financing is the small part of it. **The
-crossing arose jointly from the unconditional drift estimate and a lower financing threshold,
-with the drift estimate accounting for nearly all of the movement — and from neither is any
-feature discrimination involved.** It is flagged in `selection_log.csv` rather than presented as
-a strategy result.
+Two inputs moved, and which one mattered is a measurable question rather than a rhetorical one.
+Note first that `mu_hat` is re-estimated at **every outer step**, not at every reselection, so
+comparing two chosen refits cannot account for a year: across the twelve baseline steps in 2019
+it ranged from 7.3e-5 to 2.8e-4, and across 2020's from 2.8e-4 to 5.2e-4. Averaged over each
+year's baseline sessions, `mu_hat` went from 1.84e-4 to 4.09e-4 — a factor of **2.22** — while
+the threshold went from 4.148e-4 to 4.027e-4, a fall of **3%**, because the band is dominated by
+the 4 bp execution round trip and financing is the small part of it.
+
+Holding one input at its 2019 level at a time settles it:
+
+| 2020 baseline sessions active | |
+|---|---:|
+| actual — 2020 `mu_hat`, 2020 threshold | **59.7%** |
+| 2019 `mu_hat` level, 2020 threshold | **0.0%** |
+| 2020 `mu_hat`, 2019 threshold | **49.8%** |
+
+**At 2019's drift estimate nothing would have traded at all, whatever the rate environment
+did.** The exposure arose jointly from the updated unconditional-return estimate and a lower
+financing threshold, with the return estimate accounting for the large majority of it, and no
+feature discrimination is involved in either. It is flagged in `selection_log.csv` rather than
+presented as a strategy result.
 
 The feature layer was more stable than the model layer. Of 81 candidates, 45 were selected at
 least once and **15 were selected in at least 80 of 89 steps**; nine appeared in all 89:
@@ -241,8 +254,9 @@ standard error on the Sharpe ratio of roughly 0.39, so a true Sharpe of about 1.
 needed for 80% power, and Condition A's interval accordingly spans −0.519 to +0.806. Under those
 constraints, an effect materially smaller than that threshold would not be reliably detected
 here. What the sample cannot do is separate "small or no true effect" from "a true effect this
-design lacks the power to see" — and the size of any true effect is not something this study
-estimates. The correct statement is "not supported", not "does not exist".
+design lacks the power to see". **The study does not determine the effect size precisely**: it
+reports a point estimate and an interval for it, and the interval is wide. The correct statement
+is "not supported", not "does not exist".
 
 **Also not licensed.** Any claim that the procedure is a cost-aware filter worth deploying. Its
 positive point estimate against always-long comes from not trading, and against cash it is

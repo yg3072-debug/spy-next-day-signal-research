@@ -73,14 +73,29 @@ class CloseToClose:
     A short crosses the close, so it owes borrow — accrued over calendar days, so
     a short held over a weekend is charged three.
 
-    **The band is a choice made after P1, not a pre-registered one.** §2.2 gives
-    the cost function but no threshold, so the rule used here is the myopic
-    analogue of the primary band: take a position when the predicted excess over
-    the risk-free rate exceeds the cost of establishing it from flat, `(1+δ)·c`.
-    Myopic because it ignores that holding an existing position costs nothing,
-    which makes it trade more than an optimal path-aware rule would. Anything
-    fitted to make this look better would be a search over the trading rule of a
-    specification that is already exploratory.
+    **The position rule is specified after P1 and before any C2C return was
+    computed.** §2.2 fixes the target, the information lag, the cost function, the
+    borrow and this specification's exploratory status, but it does not say how
+    `mu_hat` becomes a position. That gap is recorded rather than papered over:
+    every C2C row in the registry carries `specified_before_p1=false` and
+    `specified_before_own_results=true`, which is the weaker of the two claims and
+    the only one that is true.
+
+    A single fixed threshold cannot serve here, and the first implementation of
+    this class got it wrong. With `c·|Δw|` costs the three transitions cost
+    different amounts — holding a position costs nothing, flat to long costs `c`,
+    long to short costs `2c` — so one number compared against `|mu_hat|` prices all
+    three identically and is simply the wrong shape. The rule is instead the
+    one-step optimum over the three admissible positions:
+
+        w_t = argmax over w in {-1, 0, +1} of
+                  w * (mu_hat_t - rf_t) - c * |w - w_{t-1}| - b_t * max(-w, 0)
+
+    This has no free parameter to tune: no margin, no threshold, no `δ`. It prices
+    each transition at what that transition actually costs, and it reduces to the
+    primary band's logic in the special case where every position is closed daily.
+    It remains greedy in the one-step sense — it does not look ahead to the cost a
+    position saves tomorrow — and that is a stated property, not a tuned one.
     """
 
     name: str = "alternative_close_to_close"
@@ -98,10 +113,42 @@ class CloseToClose:
         from build_benchmarks import cash_return
         return cash_return(snapshot).shift(-1).reindex(index).fillna(0.0)
 
-    def positions(self, mu, cost_bps, carry, delta=0.0) -> pd.Series:
+    def positions(self, mu, cost_bps, carry, delta=0.0, calendar_days=None) -> pd.Series:
+        """One-step optimal position, given yesterday's.
+
+        Path-dependent by construction: what a position costs today depends on what
+        was held yesterday, so this cannot be vectorised into a threshold and is not
+        written as one.
+        """
+        if delta:
+            raise ValueError(
+                "the close-to-close rule takes no safety margin; delta must be 0. "
+                "A margin here would be a search over the trading rule of a "
+                "specification that is already exploratory."
+            )
         c = cost_bps / 1e4
-        edge = mu - carry.loc[mu.index]
-        return np.sign(edge).where(edge.abs() > (1.0 + delta) * c, 0.0)
+        b = self.borrow_annual_bps / 1e4
+        edge = (mu - carry.loc[mu.index]).to_numpy(dtype=float)
+        if calendar_days is None:
+            calendar_days = self._calendar_days(mu.index)
+        days = calendar_days.loc[mu.index].to_numpy(dtype=float)
+
+        out = np.zeros(len(edge))
+        prev = 0.0
+        for i in range(len(edge)):
+            best, best_value = 0.0, -np.inf
+            for w in (-1.0, 0.0, 1.0):
+                value = w * edge[i] - c * abs(w - prev) - b * (days[i] / 365.0) * max(-w, 0.0)
+                if value > best_value:
+                    best, best_value = w, value
+            out[i] = best
+            prev = best
+        return pd.Series(out, index=mu.index)
+
+    @staticmethod
+    def _calendar_days(index) -> pd.Series:
+        """Days a position opened at t's close is carried, i.e. t to t+1."""
+        return index.to_series().diff().dt.days.shift(-1).fillna(1.0)
 
     def net(self, w, r, carry, cost_bps, calendar_days=None) -> pd.Series:
         c = cost_bps / 1e4
@@ -112,7 +159,7 @@ class CloseToClose:
         turnover = (w - prev).abs()
         turnover.iloc[-1] += abs(w.iloc[-1])
         if calendar_days is None:
-            calendar_days = w.index.to_series().diff().dt.days.shift(-1).fillna(1.0)
+            calendar_days = self._calendar_days(w.index)
         borrow = (self.borrow_annual_bps / 1e4) * (calendar_days.loc[w.index] / 365.0) \
             * np.maximum(-w, 0.0)
         return w * (r.loc[w.index] - carry.loc[w.index]) - c * turnover - borrow

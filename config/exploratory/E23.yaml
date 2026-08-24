@@ -5,6 +5,11 @@
 # in the run manifest. This specification is exploratory. It produces no headline
 # and cannot replace P1, whatever it shows.
 #
+# The position rule for this specification is NOT in the frozen protocol. It is
+# fixed in docs/c2c_exploratory_addendum.md, written after P1 and before any
+# close-to-close return was computed. Registry flags: specified_before_p1=false,
+# specified_before_own_results=true, cannot_modify_p1_headline=true.
+#
 # The close-to-close specification trades far less often, so it should be much
 # less cost-sensitive than the primary one. This is where that shows up or
 # fails to.

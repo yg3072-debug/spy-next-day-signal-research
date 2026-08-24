@@ -35,7 +35,8 @@ likely one.** It is reported as such, without a second search.
 1,865 out-of-sample sessions the Sharpe difference against always-long open-to-close is +0.164
 with a paired bootstrap lower bound of −0.519, and the annualised mean excess over cash is
 −1.32% with a lower bound of −7.32%. Annualised means and Sharpe ratios are stated in excess of
-cash; CAGR, terminal wealth and drawdown come from total returns including the cash leg.
+cash; CAGR, terminal wealth and drawdown come from total returns including the cash leg. The two
+conventions are identified by metric and never used interchangeably.
 
 The verdict is not the interesting part. This is:
 
@@ -67,8 +68,9 @@ What this does **not** license is a claim that no such signal exists. The findin
 not provide evidence of stable incremental value under the frozen specification, in this sample,
 at this cost level. Section 0.1 states in advance that a true Sharpe of roughly 1.09 would be
 needed for 80% power here, so this sample cannot separate "small or no true effect" from "a true
-effect it lacks the power to see". "Not supported" and "does not exist" are different findings,
-and only the first is in evidence.
+effect it lacks the power to see". The study does not determine the effect size precisely — it
+reports a point estimate and a wide interval. "Not supported" and "does not exist" are different
+findings, and only the first is in evidence.
 
 ---
 
