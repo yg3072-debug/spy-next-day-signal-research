@@ -351,13 +351,20 @@ def main() -> int:
         builders = {"news": build_news_features, "truth_social": build_truth_social_features}
         spans, blocks = [], []
         for source in alt_cfg["sources"]:
-            table = pd.read_csv(
-                ROOT / "data" / "alt" /
-                {"news": "news_headlines_sessions.csv",
-                 "truth_social": "truth_social_sessions.csv"}[source],
-                usecols=["session"], parse_dates=["session"])
-            spans.append((table.session.min(), table.session.max()))
-            blocks.append(builders[source](snapshot.index))
+            built = builders[source](snapshot.index)
+            per_doc = ROOT / "data" / "alt" / {
+                "news": "news_headlines_sessions.csv",
+                "truth_social": "truth_social_sessions.csv"}[source]
+            if per_doc.exists():
+                table = pd.read_csv(per_doc, usecols=["session"], parse_dates=["session"])
+                spans.append((table.session.min(), table.session.max()))
+            else:
+                # Without the per-document file, the span is the range over which the
+                # aggregate reports any document at all -- the same window.
+                count = built[f"{'news' if source == 'news' else 'truth'}_doc_count"]
+                live = count.index[count > 0]
+                spans.append((live.min(), live.max()))
+            blocks.append(built)
         alt = pd.concat(blocks, axis=1)
 
         # The placebo. A positive shift attaches session t-k's text to session t,

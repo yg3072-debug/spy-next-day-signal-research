@@ -18,3 +18,10 @@ results/**/*.parquet
 
 # Smoke-test artefacts are a plumbing check, not a deliverable.
 results/smoke/
+
+# Per-document alternative-data text. Third-party content; redistributing it is the
+# publisher's decision, not this project's -- the same reasoning applied to the
+# Loughran-McDonald dictionary. The session-level aggregates the study consumes ARE
+# committed, along with the source checksums, so the derivation stays verifiable.
+data/alt/truth_social_sessions.csv
+data/alt/news_headlines_sessions.csv
