@@ -90,7 +90,7 @@ Presenting it as the finding would require ignoring all of the following.
 **Its interval spans zero.** The Sharpe difference against P1 is +0.501 with a
 paired interval of [−0.107, +1.138].
 
-**It is the maximum of 33 comparable realised strategy paths** — the 19 retraining
+**It is the maximum of 34 comparable realised strategy paths** — the 20 retraining
 specifications and the 14 position rules, all scored on the same 1,865 sessions.
 The 10 news arms are counted in the registry but left out of this spread, because
 they run on a 1,247-session overlap and pooling two windows would compare unlike
@@ -99,14 +99,14 @@ among that many draws of pure noise with the observed spread:
 
 | | |
 |---|---:|
-| Comparable realised strategy paths | **33** |
-| Spread of their Sharpe ratios (sd) | 0.291 |
+| Comparable realised strategy paths | **34** |
+| Spread of their Sharpe ratios (sd) | 0.287 |
 | **Best observed** | **+0.357** |
-| Expected maximum under an **independence-based** reference | **+0.615** |
+| Expected maximum under an **independence-based** reference | **+0.609** |
 
-Under an independence-based descriptive reference, the expected maximum is +0.615
+Under an independence-based descriptive reference, the expected maximum is +0.609
 against an observed best of +0.357. **This is not a threshold and not a
-significance test.** The 33 paths are strongly correlated — many share a training
+significance test.** The 34 paths are strongly correlated — many share a training
 window, a feature screen and most of their positions — so they are nowhere near 33
 independent draws, and the expression assumes exactly the independence they lack.
 Saying "the best result is below what luck would give" would present a descriptive
@@ -216,7 +216,7 @@ because a position that persists is not re-paid for and the one-step rule holds
 rather than exits: it is a nearly-always-invested overnight strategy, not a
 selective one.
 
-The registry carries **45 realised strategy paths across 35 families**, one of which
+The registry carries **46 realised strategy paths across 36 families**, one of which
 is a voided run — see below — recorded because its result was inspected before it was
 discarded, and a number that was looked at counts.
 

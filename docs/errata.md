@@ -27,7 +27,7 @@ The figures were correct; what was claimed from them was not.
 | A6 | 2020 participation attributed **purely** to the rate environment. | Backwards. A counterfactual holding one input at its 2019 level at a time: actual 59.7% active, 0.0% at 2019's `mu_hat`, 49.8% at 2019's threshold. The drift estimate dominated. |
 | A7 | "A real effect of the size these strategies plausibly have would not have been detected." | An effect-size claim with no source. Deleted; replaced with what the sample can and cannot separate. |
 | A8 | Negative news shifts called **positive controls**, supporting "adding text degrades the result regardless of what it says". | A positive control injects a variable known by construction to carry the answer. Future headlines are not that. Renamed *future-shift leakage stress tests*; the claim narrowed to "these particular shifts did not produce a positive result". The study has no genuine positive control and now says so. |
-| A9 | "The best result is below what chance would produce", from an expected-maximum reference over 33 paths. | The paths are strongly correlated and the expression assumes an independence they lack. Now stated as a matter of scale, explicitly not a test. |
+| A9 | "The best result is below what chance would produce", from an expected-maximum reference over 34 paths. | The paths are strongly correlated and the expression assumes an independence they lack. Now stated as a matter of scale, explicitly not a test. |
 | A10 | Family-fixed runs described as unable to abstain. | The cost band still produces Flat. What is removed is the **selector's** ability to fall back to a prior-only model. |
 
 ---

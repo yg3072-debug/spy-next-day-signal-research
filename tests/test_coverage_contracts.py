@@ -140,3 +140,33 @@ def test_the_reproduction_run_is_recorded_as_equivalent():
     assert report["same_config_snapshot_and_packages"]
     for field in ("position", "mu_hat", "net", "p_long"):
         assert report["fields"][field]["identical"], f"{field} differs between runs"
+
+
+@pytest.mark.skipif(not REGISTRY.exists(), reason="no registry yet")
+def test_documents_quote_the_registrys_actual_path_count():
+    """Hand-copied counts drift. This one already did.
+
+    The reports quoted 45 paths across 35 families while the registry held 46 and
+    36, because E21 landed after the sentences were written. Nothing failed -- the
+    numbers were simply stale, which is the same silent failure as the two gaps
+    this file exists for.
+    """
+    rows = pd.read_csv(REGISTRY, dtype=str).fillna("")
+    counted = rows[(rows.performance_metrics_computed == "true")
+                   & (rows.excluded_from_trial_budget != "true")]
+    paths, families = len(counted), counted.family_id.nunique()
+
+    quoted = re.compile(r"(\d+) realised\s+strategy paths (?:across|from) (\d+)")
+    seen = 0
+    for name in ("README.md", "reports/p1_confirmatory_result.md",
+                 "reports/exploratory_results.md"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        for p, f in quoted.findall(text.replace("\n", " ")):
+            seen += 1
+            assert int(p) == paths, (
+                f"{name} says {p} realised paths; the registry has {paths}"
+            )
+            assert int(f) == families, (
+                f"{name} says {f} families; the registry has {families}"
+            )
+    assert seen >= 3, f"expected the count to be quoted in each report, found {seen}"

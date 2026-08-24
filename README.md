@@ -20,8 +20,8 @@ on trust.
 > specification order, including the rows that beat the confirmatory result. It cannot
 > change the headline and does not. The alternative-data layer is in
 > [`reports/alternative_data_appendix.md`](reports/alternative_data_appendix.md).
-> `results/experiment_registry.csv` records **45 realised strategy paths across 35
-> specification families** — 19 retraining specifications, 14 position rules, 10 news
+> `results/experiment_registry.csv` records **46 realised strategy paths across 36
+> specification families** — 20 retraining specifications, 14 position rules, 10 news
 > arms, the confirmatory run, and one voided run whose result was inspected before it
 > was discarded. That last one is in there because a number that was looked at counts,
 > and leaving it out would quietly shorten the ruler.
@@ -96,8 +96,8 @@ procedure's 1.086. It is the best number in the study.
 It is reported, in specification order, alongside every other row, and it is not the finding:
 
 - its Sharpe difference against the confirmatory run is +0.501 with an interval of **[−0.107, +1.138]**
-- it is the maximum of **33 comparable realised strategy paths**, and an independence-based
-  descriptive reference puts the expected maximum at **+0.615**. That is a statement of scale,
+- it is the maximum of **34 comparable realised strategy paths**, and an independence-based
+  descriptive reference puts the expected maximum at **+0.609**. That is a statement of scale,
   not a test: the paths are strongly correlated, so they are nowhere near 33 independent draws,
   and the expression assumes the independence they lack
 - fixing one model family for the whole sample **requires knowing in advance which family to
@@ -197,7 +197,7 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**97 tests** run on every commit, including two coverage contracts: every output the
+**98 tests** run on every commit, including two coverage contracts: every output the
 configuration declares must exist and carry its columns, and every trial identifier the
 protocol registers must have a status in the registry. Both exist because both gaps
 happened — silently — and neither failed anything at the time.
@@ -230,7 +230,7 @@ reports/    p1_confirmatory_result.md   the confirmatory result
 results/    benchmarks, the confirmatory run, every exploratory run, the registry
 scripts/    freeze_*, build_*, run_*, evaluate_*, verify_hashes, registry
 src/        features.py, altdata.py, execution.py, pipeline.py, stats.py, strategy.py
-tests/      97 checks
+tests/      98 checks
 ```
 
 ---
