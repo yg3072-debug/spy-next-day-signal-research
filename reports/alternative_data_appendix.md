@@ -157,11 +157,20 @@ would launder the second into the credibility of the first.
 Two construction choices are worth stating because the alternatives are quietly
 destructive.
 
-**Empty posts are counted, not scored.** An empty string contributes zero positive
-and zero negative words, so a session of forty images would report a tone of
+**Empty text is counted, not scored.** An empty string contributes zero positive
+and zero negative words, so a session of forty text-free rows would report a tone of
 exactly zero — indistinguishable from forty balanced posts. Scoring them would make
-every tone estimate a function of how much the account happened to post pictures.
-They are excluded from the aggregates and carried as `truth_empty_post_count`.
+every tone estimate a function of how many such rows there were. They are excluded
+from the aggregates and carried as `truth_empty_post_count`.
+
+**What those 26.5% are cannot be fully determined**, and an earlier draft of this
+appendix overstated it. The collector extracts the post body by regular expression
+over the flattened page and writes nothing when no pattern matches, so an empty
+field means "the extractor returned nothing" — either a genuinely text-free post or
+an extraction miss. All 3,749 such rows do carry a status id, both URLs and a parsed
+timestamp, so the page was fetched successfully and these are not network failures.
+26.5% is an upper bound on text-free posts containing an unknown number of misses.
+`docs/scraping_notes.md` carries the detail.
 
 **Sessions with no documents are kept, with zero counts and neutral tone.**
 Dropping them would make the alternative-data sample a non-random subset of the
@@ -221,6 +230,13 @@ recorded.
 **One account, one news source, one market.** Truth Social is a single author over
 21 months; the headline file is one publisher's selection. Neither is a
 representative sample of financial text.
+
+**The text sample ends before the market sample does.** The archive runs to
+2026-04-23 and the market snapshot to 2026-08-21, a gap of 83 trading sessions.
+Closing it would move the smallest detectable Sharpe difference from 2.40 to 2.16 —
+measured, not assumed — which changes nothing about §9.2's conclusion, so the
+snapshot was left as collected rather than re-scraped for a result that cannot
+turn on it.
 
 **Topic word lists are bespoke.** They were written for this project and have not
 been validated against anything. They are visible in `src/altdata.py` precisely so
