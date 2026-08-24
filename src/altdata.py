@@ -198,9 +198,34 @@ def aggregate_by_session(
     return out
 
 
+ALT = ROOT / "data" / "alt"
+
+
+def _committed(name: str, sessions: pd.Index) -> pd.DataFrame | None:
+    """The session-level aggregate, if it is present.
+
+    The per-document text is not committed -- it is third-party content and
+    redistributing it is the publisher's decision, not this project's, exactly as
+    with the dictionary. The aggregate the study actually consumes is committed, so
+    a fresh clone can reproduce everything downstream of the text without holding
+    the text. Rebuilding from raw needs the sources named in docs/scraping_notes.md.
+    """
+    path = ALT / f"{name}_session_features.csv"
+    if not path.exists():
+        return None
+    frame = pd.read_csv(path, index_col=0, parse_dates=[0])
+    frame.index.name = sessions.name
+    return frame.reindex(sessions)
+
+
 def build_news_features(sessions: pd.Index, lexicon=None) -> pd.DataFrame:
-    frame = pd.read_csv(ROOT / "data" / "alt" / "news_headlines_sessions.csv",
-                        parse_dates=["session"])
+    raw = ALT / "news_headlines_sessions.csv"
+    if not raw.exists():
+        cached = _committed("news", sessions)
+        if cached is not None:
+            return cached
+        raise FileNotFoundError(f"neither {raw} nor the committed aggregate is present")
+    frame = pd.read_csv(raw, parse_dates=["session"])
     lexicon = lexicon or load_lexicon()
     scores = score_documents(frame.title, lexicon)
     return aggregate_by_session(frame, scores, "news", sessions)
@@ -218,8 +243,13 @@ def build_truth_social_features(sessions: pd.Index, lexicon=None) -> pd.DataFram
     carried as their own feature, because posting frequently without text is itself
     a state.
     """
-    frame = pd.read_csv(ROOT / "data" / "alt" / "truth_social_sessions.csv",
-                        parse_dates=["session"])
+    raw = ALT / "truth_social_sessions.csv"
+    if not raw.exists():
+        cached = _committed("truth_social", sessions)
+        if cached is not None:
+            return cached
+        raise FileNotFoundError(f"neither {raw} nor the committed aggregate is present")
+    frame = pd.read_csv(raw, parse_dates=["session"])
     lexicon = lexicon or load_lexicon()
     empty = frame.is_empty.astype(bool)
 
