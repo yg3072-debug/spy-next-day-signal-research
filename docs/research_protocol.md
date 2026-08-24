@@ -1018,8 +1018,11 @@ taking the suite from 38 to 54. They verify properties of the completed run's ou
 of the procedure: that a flat session is charged no execution cost and no financing, that every
 realised position equals what §3.3's band implies for its `mu_hat`, that the reported class
 probabilities sum to one, that the majority baseline's `mu_hat` is constant within an outer
-block and changes across blocks, and that each out-of-sample session appears exactly once. **No
-protocol text, configuration value, model, or reported figure changed.** They are recorded here
+block and changes across blocks, and that each out-of-sample session appears exactly once. A
+further nine cover the exploratory group's second execution specification, taking the suite to
+63; one of them pins the primary specification's refactored implementation against the committed
+run and requires it to agree to the last bit. **No protocol text, configuration value, model, or
+reported figure changed.** They are recorded here
 because the alternative — a suite that silently grows while the document keeps quoting the frozen
 count — makes the freeze harder to check rather than easier. The state at freeze is tagged
 `protocol-v6-frozen` and can be diffed.

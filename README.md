@@ -151,7 +151,7 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**54 tests** run on every commit.
+**63 tests** run on every commit.
 
 ---
 
@@ -167,7 +167,7 @@ docs/       research_protocol.md   the frozen protocol
 results/    benchmark_comparison.csv, benchmark_intervals.csv
 scripts/    freeze_market_data.py, build_benchmarks.py, build_docs.py
 src/        features.py, stats.py, strategy.py
-tests/      54 checks
+tests/      63 checks
 ```
 
 ---
