@@ -1,0 +1,6 @@
+id,kind,oos_sessions,n_active,active_rate,ann_mean_excess,sharpe,terminal_wealth,shared_with_N0,sharpe_minus_N0,lo,hi
+N0,control arm — market features only,1247,407,0.326383,0.021776,0.212866,1.20282,,,,
+N1,"treatment arm — market + news, true alignment",1247,459,0.368083,-0.00622652,-0.0577798,1.04421,1247,-0.270646,-0.703727,0.105792
+N1p5,"placebo — news from t−5, stale but legitimate",1247,439,0.352045,-0.00655398,-0.0638491,1.04534,1247,-0.276715,-0.766955,0.115734
+N1m5,"positive control — news from t+5, information it could not have had",1247,417,0.334403,-0.018431,-0.177495,0.985025,1247,-0.390361,-0.871027,0.000744955
+N1m10,"positive control — news from t+10, information it could not have had",1247,428,0.343224,0.00408235,0.0386878,1.10015,1247,-0.174178,-0.904915,0.518559

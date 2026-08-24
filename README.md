@@ -153,23 +153,30 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**63 tests** run on every commit.
+**80 tests** run on every commit.
 
 ---
 
 ## Layout
 
 ```
-config/     p1.yaml + its SHA — the confirmatory procedure, fully determined
+config/     p1.yaml + its SHA        the confirmatory procedure, fully determined
+            exploratory/             the pre-registered E group, as overlays
+            altdata/                 the section 9.1 news arms
 data/       frozen market snapshot, manifest and checksum
-docs/       research_protocol.md   the frozen protocol
-            data_availability.md   publication time to usable time, per field
-            feature_dictionary.md  generated from the metadata registry in code
-            decision_log.md        every methodological decision and its rationale
-results/    benchmark_comparison.csv, benchmark_intervals.csv
-scripts/    freeze_market_data.py, build_benchmarks.py, build_docs.py
-src/        features.py, stats.py, strategy.py
-tests/      63 checks
+            alt/                     session-level alternative-data aggregates
+docs/       research_protocol.md     the frozen protocol
+            c2c_exploratory_addendum.md  the close-to-close position rule
+            data_availability.md     publication time to usable time, per field
+            feature_dictionary.md    generated from the metadata registry in code
+            alt_feature_dictionary.md    likewise, for the text features
+            scraping_notes.md        alternative-data lineage and repair
+            decision_log.md          every methodological decision and its rationale
+reports/    p1_confirmatory_result.md, alternative_data_appendix.md
+results/    benchmarks, the confirmatory run, every exploratory run, the registry
+scripts/    freeze_*, build_*, run_*, evaluate_*, verify_hashes, registry
+src/        features.py, altdata.py, execution.py, pipeline.py, stats.py, strategy.py
+tests/      80 checks
 ```
 
 ---
@@ -185,6 +192,14 @@ python scripts/build_docs.py                    # regenerate the feature diction
 python scripts/run_p1.py                        # the confirmatory run, ~20 minutes
 python scripts/evaluate_p1.py                   # the two conditions
 pytest tests/ -q
+
+# the exploratory group, which cannot change the result above
+python scripts/fetch_lexicon.py                 # Loughran-McDonald, verified by hash
+python scripts/run_exploratory_positions.py     # the arms that need no refit
+python scripts/run_exploratory_batch.py --workers 6
+python scripts/evaluate_exploratory.py
+python scripts/run_exploratory_batch.py --dir config/altdata --out results/altdata --workers 5
+python scripts/evaluate_news_increment.py
 ```
 
 The snapshot is committed, so nothing above touches the network. `freeze_market_data.py`
@@ -204,11 +219,11 @@ effective number of independent trials would need its own argument — a descrip
 multiple-testing reference is reported instead. A regression target, which would have to be
 pre-registered in parallel rather than added after a classification result. Pre-trained language
 models for the alternative-data appendix, where a lexicon already answers whether there is an
-increment. A trading test on the Truth Social sample: 246 out-of-sample sessions give a standard
-error of 1.07 on a Sharpe difference, so only a difference above roughly 2.1 would be
-distinguishable, and running one anyway would be exactly the kind of noise this protocol exists
-to prevent. The twenty-four pre-registered exploratory specifications, which have not been run
-and cannot change the headline above.
+increment. **A trading test on the Truth Social sample**: measured on P1's own returns, 246
+out-of-sample sessions give a paired bootstrap standard error of 1.149 on a Sharpe difference,
+so only a difference above roughly 2.25 would be distinguishable from zero. Running one anyway
+and reporting whatever Sharpe emerged is exactly the noise this protocol exists to prevent, and
+the sample is described rather than traded.
 
 Each is named in the protocol with what it is, why it would matter here, and why it is not in
 this round.
