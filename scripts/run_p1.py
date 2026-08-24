@@ -338,10 +338,53 @@ def main() -> int:
     if spec.extra_feature_lag:
         features_all = features_all.shift(spec.extra_feature_lag)
 
+    # §9.1's incremental test: the same procedure, the same folds, the same sample,
+    # differing only in whether the alternative-data columns are present. The
+    # market-only arm therefore also restricts to the overlap -- comparing a
+    # market-only run on the full sample against a market-plus-news run on the
+    # overlap would confound the feature set with the window.
+    alt_cfg = cfg.get("alt_data") or {}
+    alt_window = None
+    if alt_cfg:
+        from src.altdata import REGISTRY as ALT_REGISTRY
+        from src.altdata import build_news_features, build_truth_social_features
+        builders = {"news": build_news_features, "truth_social": build_truth_social_features}
+        spans, blocks = [], []
+        for source in alt_cfg["sources"]:
+            table = pd.read_csv(
+                ROOT / "data" / "alt" /
+                {"news": "news_headlines_sessions.csv",
+                 "truth_social": "truth_social_sessions.csv"}[source],
+                usecols=["session"], parse_dates=["session"])
+            spans.append((table.session.min(), table.session.max()))
+            blocks.append(builders[source](snapshot.index))
+        alt = pd.concat(blocks, axis=1)
+
+        # The placebo. A positive shift attaches session t-k's text to session t,
+        # which is stale but legitimate information. A NEGATIVE shift attaches text
+        # from the future, and is a positive control rather than a placebo: if
+        # tomorrow's headlines do not improve the result either, the pipeline cannot
+        # detect this kind of information at all, and a null from the real alignment
+        # says less than it appears to.
+        k = int(alt_cfg.get("placebo_shift_sessions", 0))
+        if k:
+            alt = alt.shift(k)
+
+        if alt_cfg.get("include_columns", True):
+            features_all = features_all.join(alt, how="left")
+            groups.update({f.name: f.group for f in ALT_REGISTRY})
+        alt_window = (max(a for a, _ in spans), min(b for _, b in spans))
+
     target_simple = spec.target(snapshot)
     target_log = np.log1p(target_simple).rename("target_log")
 
     complete = features_all.dropna().index.intersection(target_simple.dropna().index)
+    if alt_window is not None:
+        lo, hi = alt_window
+        # A placebo shift moves the alternative data off the front or back of its own
+        # span, so the usable window shrinks by |k| sessions on one side. Both arms of
+        # a comparison must be run at the same shift to stay on identical rows.
+        complete = complete[(complete >= lo) & (complete <= hi)]
     features_all, target_log = features_all.loc[complete], target_log.loc[complete]
     target_simple = target_simple.loc[complete]
     vol = snapshot.loc[complete, "Volatility_20"] if "Volatility_20" in snapshot else \
@@ -384,6 +427,10 @@ def main() -> int:
     if args.overlay:
         print(f"overlay         {args.overlay}  {overlay_sha[:16]}...")
     print(f"execution       {spec.name}")
+    if alt_cfg:
+        shift = int(alt_cfg.get("placebo_shift_sessions", 0))
+        arm = "market + alt" if alt_cfg.get("include_columns", True) else "market only"
+        print(f"alternative     {alt_cfg['sources']}  arm={arm}  shift={shift:+d}")
     if dropped:
         print(f"excluded groups {sorted(dropped)}  -> {features_all.shape[1]} features remain")
     print(f"modelling set   {n} sessions, {complete.min().date()} to {complete.max().date()}")

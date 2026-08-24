@@ -1,0 +1,18 @@
+# N1p10 - placebo, news shifted +10 sessions
+#
+# Protocol section 9.1. An overlay on the frozen config/p1.yaml, merged at run
+# time; the frozen file is never edited. Exploratory: this cannot change the P1
+# headline in either direction.
+#
+# News from session t-10 attached to session t. Stale but legitimate
+# information. If an improvement survives this, it came from sample structure
+# rather than from what the text said.
+
+meta:
+  id: N1p10
+  role: exploratory
+
+alt_data:
+  sources: [news]
+  include_columns: true
+  placebo_shift_sessions: 10

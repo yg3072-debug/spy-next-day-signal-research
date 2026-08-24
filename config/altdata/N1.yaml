@@ -1,0 +1,17 @@
+# N1 - market plus news
+#
+# Protocol section 9.1. An overlay on the frozen config/p1.yaml, merged at run
+# time; the frozen file is never edited. Exploratory: this cannot change the P1
+# headline in either direction.
+#
+# The treatment arm. Any difference against N0 is attributable to the feature
+# set alone, because nothing else differs.
+
+meta:
+  id: N1
+  role: exploratory
+
+alt_data:
+  sources: [news]
+  include_columns: true
+  placebo_shift_sessions: 0
