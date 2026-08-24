@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-from src.digest import sha256_of  # noqa: E402  (canonical, line-ending independent)
+from src.digest import sha256_bytes, sha256_of  # noqa: E402  (line-ending independent)
 
 
 def main() -> int:
@@ -65,10 +65,21 @@ def main() -> int:
     artefacts = [ROOT / "config" / "p1.yaml",
                  sorted(ROOT.glob("data/market_inputs_*.csv"))[-1]]
     known = {sha256_of(a) for a in artefacts}
-    superseded = {sha256_of(a, normalise=False) for a in artefacts} - known
+
+    # A superseded digest is one of these artefacts under the older convention: the
+    # same content with CRLF terminators. It is CONSTRUCTED from the canonical bytes
+    # rather than read off disk, because on a Linux checkout the working copy is
+    # already LF and the older digest could not otherwise be reproduced at all --
+    # which is exactly how this check passed locally and failed in CI.
+    CR, LF = b"\x0d", b"\x0a"
+    superseded = set()
+    for a in artefacts:
+        canonical = a.read_bytes().replace(CR + LF, LF)
+        superseded.add(sha256_bytes(canonical.replace(LF, CR + LF), normalise=False))
+    superseded -= known
     if superseded:
-        print(f"note superseded digests admissible, verified as the same artefacts "
-              f"hashed verbatim: {', '.join(sorted(d[:8] for d in superseded))}")
+        print(f"note superseded digests admissible, reconstructed from the committed "
+              f"content: {', '.join(sorted(d[:8] for d in superseded))}")
     known |= superseded
     # At least one a-f, so an eight-digit date in backticks is not mistaken for a digest.
     quoted = {m for m in re.findall(r"`([0-9a-f]{8,64})…?`", protocol) if re.search(r"[a-f]", m)}
