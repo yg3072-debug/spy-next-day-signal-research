@@ -163,14 +163,14 @@ exactly zero — indistinguishable from forty balanced posts. Scoring them would
 every tone estimate a function of how many such rows there were. They are excluded
 from the aggregates and carried as `truth_empty_post_count`.
 
-**What those 26.5% are cannot be fully determined**, and an earlier draft of this
-appendix overstated it. The collector extracts the post body by regular expression
-over the flattened page and writes nothing when no pattern matches, so an empty
-field means "the extractor returned nothing" — either a genuinely text-free post or
-an extraction miss. All 3,749 such rows do carry a status id, both URLs and a parsed
-timestamp, so the page was fetched successfully and these are not network failures.
-26.5% is an upper bound on text-free posts containing an unknown number of misses.
-`docs/scraping_notes.md` carries the detail.
+**What those 26.5% are was measured rather than assumed.** The collector extracts
+the body by regular expression over the flattened page and writes nothing when no
+pattern matches, so an empty field could mean a text-free post *or* an extraction
+miss, and the archive alone does not separate them. `scripts/diagnose_empty_posts.py`
+re-fetches a sample and reads the body element directly. Validated first on 49 rows
+the old extractor did find text for — the structural reader agrees on 100% of them —
+and then applied to 148 empty rows: **not one is an extraction miss.** All 148 are
+genuinely text-free, 96 with an image attachment and 50 with a video.
 
 **Sessions with no documents are kept, with zero counts and neutral tone.**
 Dropping them would make the alternative-data sample a non-random subset of the
@@ -290,3 +290,17 @@ turn on it.
 **Topic word lists are bespoke.** They were written for this project and have not
 been validated against anything. They are visible in `src/altdata.py` precisely so
 that a reader can discount them appropriately.
+
+**A large share of the available text is not used.** The diagnostic above found
+that **92.6% of text-free posts carry a video transcript** — archive-generated text
+for video attachments, roughly 3,470 posts' worth of spoken content that no feature
+here touches, because the original collector never extracted it. This is the most
+substantial known gap in the layer.
+
+It is left open on purpose. Adding transcripts now, having seen that the news layer
+produced nothing, would be a new specification chosen in response to a null result,
+which is the move §7.2 exists to prevent. It is a pre-registrable direction for a
+future round rather than a repair to this one — and it would need its own
+justification, since a transcript is spoken rather than typed and machine-produced
+rather than authored, and concatenating it onto the post body would silently mix
+two different kinds of evidence.
