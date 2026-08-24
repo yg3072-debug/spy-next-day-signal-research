@@ -50,5 +50,45 @@
     "id": "E15",
     "status": "ok",
     "minutes": 23.85
+  },
+  {
+    "id": "E16",
+    "status": "ok",
+    "minutes": 24.81
+  },
+  {
+    "id": "E17",
+    "status": "ok",
+    "minutes": 25.82
+  },
+  {
+    "id": "E18",
+    "status": "ok",
+    "minutes": 23.19
+  },
+  {
+    "id": "E19",
+    "status": "ok",
+    "minutes": 25.43
+  },
+  {
+    "id": "E20",
+    "status": "ok",
+    "minutes": 22.0
+  },
+  {
+    "id": "E22",
+    "status": "ok",
+    "minutes": 22.3
+  },
+  {
+    "id": "E23",
+    "status": "ok",
+    "minutes": 21.98
+  },
+  {
+    "id": "E24",
+    "status": "ok",
+    "minutes": 21.82
   }
 ]

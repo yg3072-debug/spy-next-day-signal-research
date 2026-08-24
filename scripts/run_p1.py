@@ -300,7 +300,12 @@ def main() -> int:
         overlay_sha = hashlib.sha256(raw).hexdigest()
         cfg = deep_merge(cfg, yaml.safe_load(raw) or {})
 
-    spec = get_spec(cfg["meta"]["execution_specification"])
+    # Parameters the specification owns are passed to it, not left at their
+    # defaults while the configuration quietly disagrees. See get_spec.
+    spec_kwargs = {}
+    if cfg["meta"]["execution_specification"] == "alternative_close_to_close":
+        spec_kwargs["borrow_annual_bps"] = float(cfg["costs"]["borrow_annual_bps"])
+    spec = get_spec(cfg["meta"]["execution_specification"], **spec_kwargs)
     snapshot, manifest = load_snapshot()
 
     # E20 substitutes the oil factor at the snapshot, so every downstream feature
@@ -561,6 +566,7 @@ def main() -> int:
         "config": args.config, "config_sha256": config_sha,
         "overlay": args.overlay, "overlay_sha256": overlay_sha,
         "execution_specification": spec.name,
+        "execution_parameters": spec_kwargs,
         "snapshot_sha256": manifest["sha256"],
         "code_commit": subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True

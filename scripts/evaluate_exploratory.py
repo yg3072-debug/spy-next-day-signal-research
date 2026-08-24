@@ -41,9 +41,15 @@ BASE_COST = 2.0
 
 
 def load_run(directory: Path):
+    """Rebuild the specification the run actually used, parameters included.
+
+    Scoring a run with a different borrow charge from the one it traded under would
+    be the same defect that produced E24 in the first place, one level down.
+    """
     manifest = json.loads((directory / "run_manifest.json").read_text(encoding="utf-8"))
     oos = pd.read_csv(directory / "oos_predictions.csv", index_col="date", parse_dates=True)
-    spec = get_spec(manifest.get("execution_specification", "primary_open_to_close"))
+    spec = get_spec(manifest.get("execution_specification", "primary_open_to_close"),
+                    **(manifest.get("execution_parameters") or {}))
     return manifest, oos, spec
 
 
