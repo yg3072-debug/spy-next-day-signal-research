@@ -10,7 +10,8 @@ meta:
   id: P1
   role: confirmatory_primary_procedure
   execution_specification: primary_open_to_close
-  frozen: 2026-08-23
+  frozen: 2026-08-24
+  supersedes: protocol-v5-frozen
 
 # ---------------------------------------------------------------- sample & target
 
@@ -209,7 +210,19 @@ position_rule:
   # close, exactly as the costs it has to cover do.
   threshold_formula: "(1 + delta) * (2 * c + f_t)"
   includes_financing: true
-  delta_multiple_grid: [0.0, 0.5, 1.0, 2.0]
+  # delta is fixed at zero in P1, so the threshold is exactly the full expected
+  # cost: trade if and only if the predicted return exceeds what the trade costs.
+  #
+  # It was a grid in v5, and selecting over it turned out to be a search over the
+  # trading rule itself. Because delta drives the participation rate directly, the
+  # inner cross-validation was choosing a model and a trading frequency at the
+  # same time, and the winner was consistently a candidate that traded on about 6%
+  # of sessions — a Sharpe estimated on roughly 30 non-zero observations, ranked
+  # first out of 92. Fixing delta at zero removes that degree of freedom, cuts the
+  # candidate space from 92 to 23, and matches what the protocol says the band is
+  # for. The margins are a declared sensitivity, not a choice the procedure makes.
+  delta_multiple: 0.0
+  delta_sensitivity_exploratory: [0.5, 1.0, 2.0]
   positions: [-1, 0, 1]
 
 costs:
@@ -245,8 +258,8 @@ selection:
   # delta values = 92 candidates, selected in one pass. Choosing delta per model
   # first and then applying the rule across models would be a two-stage selection,
   # which is a second comparison hidden inside the first.
-  candidate_space: model_config_x_delta
-  n_candidates: 92
+  candidate_space: model_config          # delta is fixed, not selected
+  n_candidates: 23
   eligibility: "score_j >= score_best - se_best"
   # The band is one standard error *of the best candidate*, not of each candidate.
   rule: >
@@ -254,12 +267,29 @@ selection:
     primary metric is at least the best score minus the best candidate's standard
     error, take the simplest by the ordering key below. Remaining ties resolve to
     the earliest entry in the declared grid order.
-  simplicity_key: [complexity_rank, within_family_rank, negative_delta_multiple]
-  # A larger delta trades less and is the more conservative rule, so it counts as
-  # simpler. Hence the negation: -2.0 sorts before -0.0.
+  simplicity_key: [complexity_rank, within_family_rank]
+  # The one-standard-error rule is a model-simplification heuristic. It is not a
+  # multiple-testing correction and does not substitute for a deflated Sharpe
+  # ratio. It also uses the standard error of the best candidate alone, without
+  # the paired covariance between candidate scores — a known limitation of the
+  # rule when the candidates being compared are correlated, and a stated one here
+  # rather than a silent one. It carries no guarantee that more than one candidate
+  # is eligible; a single eligible candidate is an outcome, not a failure.
   constraints:
+    # A degeneracy guard only: below this the metric is not estimable. It is not a
+    # statement that a strategy ought to trade often. Raising it to force more
+    # eligible candidates would smuggle "must trade frequently" into the
+    # hypothesis space and could exclude a genuinely sparse signal.
     min_active_positions_inner_oos: 30
     require_finite_sharpe: true
+  # Reported for every candidate at every reselection, as diagnostics rather than
+  # as additional gates.
+  per_candidate_diagnostics:
+    - score
+    - standard_error
+    - active_positions
+    - turnover_per_year
+    - in_sample_minus_inner_oos_score
   degenerate_handling: >
     A candidate with fewer than 30 active positions on the concatenated inner-OOS,
     or with undefined Sharpe because its excess return has zero variance, is
@@ -274,7 +304,8 @@ compute_budget:
   # outer-train and then refits the base estimator on all of it. Counts follow
   # from the pinned nested splitter (3 sub-folds).
   fits_per_candidate_per_inner_fold: 4   # 3 nested calibration folds + 1 model fit
-  inner_fits_per_retune: 460             # 23 configs x 5 folds x 4
+  inner_fits_per_retune: 460             # 23 configs x 5 folds x 4 — unchanged by
+                                         # fixing delta, which never needed a refit
   retunes: 8
   fits_per_monthly_refit: 4              # 3 calibration cross-fit + 1 final
   outer_steps: 89
@@ -291,6 +322,7 @@ seeds:
 
 outputs:
   - results/oos_predictions.csv        # date, probabilities, mu_hat, w, realised return
+  - results/candidate_diagnostics.csv  # every candidate at every reselection
   - results/trade_ledger.csv
   - results/selection_log.csv          # every retune: candidate, metric, SE, chosen, why
   - results/feature_stability.csv

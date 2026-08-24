@@ -1,6 +1,6 @@
 # Research Protocol
 
-**Frozen 2026-08-23.** Every degree of freedom in the confirmatory procedure is fixed below
+**Frozen 2026-08-24, version 6.** Every degree of freedom in the confirmatory procedure is fixed below
 and in `config/p1.yaml` before that procedure runs once. Amendments are not made to this
 document; a change produces a new version and a new freeze.
 
@@ -13,7 +13,7 @@ document; a change produces a new version and a new freeze.
 | Assumed execution cost | 2 bp per side, 4 bp round trip, plus intraday financing |
 | Trial structure | one confirmatory procedure, 24 pre-registered exploratory specifications |
 | Data snapshot SHA-256 | `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a` |
-| Configuration SHA-256 | `e6c1776df8dd3b16f8fe0b3192cd417a6bd4c192648298fc444bae1c5529277d` |
+| Configuration SHA-256 | `c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7` |
 
 ---
 
@@ -286,7 +286,7 @@ borrowed from another fold or another step.
 ### 3.3 The no-trade band
 
 ```
-h_t = ( 1 + δ ) · ( 2c + f_t )
+h_t = 2c + f_t                         δ = 0 in the confirmatory procedure
 
 w_{t+1} = +1  if mu_hat_t >  h_t
           −1  if mu_hat_t < −h_t
@@ -300,8 +300,12 @@ execution cost alone admits every trade with `2c < |mu_hat| < 2c + f_t`, and tho
 in expectation.** The threshold is consequently time-varying: it tracks the short rate and
 shrinks on an early close, exactly as the costs it must cover do.
 
-`δ` is a safety margin expressed as a multiple of the **total** cost, so it retains its meaning
-when the cost scenario changes.
+**`δ` is held at zero.** The rule is then exactly what the section title claims: trade if and
+only if the predicted return exceeds what the trade costs. A margin above cost is a defensible
+thing to want, but selecting one is a search over the trading rule, and because `δ` drives the
+participation rate directly it lets an inner cross-validation choose a model and a trading
+frequency in the same breath. Margins of 0.5, 1.0 and 2.0 are a declared sensitivity in the
+exploratory group, not a decision the confirmatory procedure makes. See the version record.
 
 Flat therefore means "the prediction does not cover the cost of acting on it", not "the
 prediction sits near the middle of its own distribution". A naive rule taking the arg-max class
@@ -606,6 +610,7 @@ Two kinds of sensitivity must therefore be distinguished, or the budget is breac
 | E1–E4 | Exploratory | Feature-group ablation: cross-market, macro, intraday, volume |
 | E5–E8 | Exploratory | Single model family fixed, no dynamic selection |
 | E9–E11 | Exploratory | Naive arg-max, fixed-quantile band, volatility targeting |
+| E12b | Exploratory | Safety margins above cost: δ ∈ {0.5, 1.0, 2.0} |
 | E12 | Exploratory | Positions re-optimised at each cost level |
 | E13–E16 | Sensitivity | Rolling window, initial training length, refit step, isotonic calibration |
 | E17–E19 | Sensitivity | Repeated random seeds |
@@ -822,7 +827,7 @@ weekends.
 
 ## Appendix A · P1 configuration
 
-`config/p1.yaml`, **SHA-256 `e6c1776df8dd3b16f8fe0b3192cd417a6bd4c192648298fc444bae1c5529277d`**,
+`config/p1.yaml`, **SHA-256 `c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7`**,
 recorded in every run manifest.
 
 ### A.1 Inner cross-validation
@@ -842,7 +847,7 @@ Runs inside every inner-train slice and again on every outer-train refit. No man
    (merging anything above 0.80); keep the highest-|IC| member of each cluster
 5. Cap at **25** features
 
-### A.3 Candidate space: 23 × 4 = 92
+### A.3 Candidate space: 23
 
 | Family | Complexity rank | Grid | Count |
 |---|---:|---|---:|
@@ -852,12 +857,7 @@ Runs inside every inner-train slice and again on every outer-train refit. No man
 | LightGBM | 3 | num_leaves ∈ {7, 15} × lr ∈ {0.03, 0.1} × min_child ∈ {60, 30} | 8 |
 | XGBoost | 4 | max_depth ∈ {2, 3} × lr ∈ {0.03, 0.1} | 4 |
 
-`δ` ∈ {0, 0.5, 1.0, 2.0} as a multiple of the round-trip cost, swept on `mu_hat` without
-refitting.
-
-**The candidate space is the full cross product, selected in one pass.** Picking the best `δ`
-per family and then comparing families would be a two-stage selection — a second comparison
-concealed inside the first.
+`δ` is fixed at zero and is not a dimension of the search.
 
 ### A.4 One-standard-error rule
 
@@ -870,9 +870,7 @@ standard err  stationary bootstrap, block 20, 1,000 resamples
 eligible      score_j  >=  score_best − se_best
               the band is one standard error of the BEST candidate, not of each
 
-ordering      (complexity_rank, within_family_rank, −delta_multiple)
-              a larger δ trades less and is the more conservative rule, so it
-              counts as simpler; hence the negation
+ordering      (complexity_rank, within_family_rank)
 ties          resolve to the earliest entry in the declared grid order
 
 vetoes        fewer than 30 active positions on the concatenated inner out-of-sample
@@ -881,6 +879,59 @@ vetoes        fewer than 30 active positions on the concatenated inner out-of-sa
               → if all are degenerate, the majority baseline is selected and the
                 step is flagged as producing no tradeable model
 ```
+
+Three things this rule is not, stated because each is easy to assume.
+
+It is **not a multiple-testing correction.** It is a model-simplification heuristic: given two
+candidates that are indistinguishable, prefer the simpler. Selecting a maximum over 23
+candidates still carries a winner's curse, which is what the descriptive reference in §6.4
+speaks to and what a deflated Sharpe ratio would address properly.
+
+It uses **the standard error of the best candidate alone**, not the paired covariance between
+candidate scores. When the candidates being compared are correlated — and here they are, being
+fits of overlapping feature sets to the same labels — that understates how much of the gap
+between two candidates is shared noise. This is a known limitation of the rule and is recorded
+rather than worked around.
+
+It carries **no guarantee that more than one candidate is eligible.** A single eligible
+candidate means the best was more than one standard error clear of everything simpler. That is
+an outcome, not a malfunction, and widening the band after seeing that it bound tightly would
+be exactly the kind of post-hoc loosening the protocol exists to prevent.
+
+The 30-position floor is a **degeneracy guard only**: below it the metric is not estimable. It
+is not a statement that a strategy ought to trade often. Raising it to produce more eligible
+candidates would smuggle "must trade frequently" into the hypothesis space and could exclude a
+genuinely sparse signal. Per-candidate diagnostics — score, standard error, active positions,
+turnover, and the train-minus-validation gap — are written to
+`results/candidate_diagnostics.csv` for every candidate at every reselection, as diagnostics
+and not as further gates.
+
+### A.4.1 When the majority baseline is selected
+
+The baseline is in the candidate set as a reference: a model that predicts the class prior and
+nothing else. The one-standard-error rule can select it, and that outcome has a specific
+meaning — **no candidate was more than one standard error clear of predicting the base rate**.
+
+It also has a specific consequence for the positions, which must be read correctly rather than
+as a strategy result. The baseline's `mu_hat` is a constant within each refit, being the
+prior-weighted average of the class-conditional means. The band it is compared against is not
+constant: it moves with the short rate and the session length. So on steps where the baseline is
+selected, **the position series is the comparison of an unconditional drift estimate against the
+prevailing cost level, and carries no feature-based signal at all.** It will tend to hold
+exposure when financing is cheap and stay flat when it is not, which is a property of the rate
+environment rather than of anything predicted.
+
+Two things follow, and both are disclosures rather than adjustments:
+
+- Steps where the baseline was selected are flagged in `results/selection_log.csv`
+  (`baseline_selected`) and are identifiable in `results/oos_predictions.csv` from the `model`
+  column. Any performance figure covering those steps is reported with that fact attached.
+- No rule maps "baseline selected" to a forced flat position. Adding one would change the
+  realised P&L, which is a substantive change and would need its own version. The protocol
+  notes instead that the configuration already flags the *other* route to the baseline — being
+  selected because every candidate degenerated — as producing no tradeable model, and that the
+  two routes are therefore reported differently despite arriving at the same model. That
+  asymmetry is recorded here rather than smoothed over.
 
 ### A.5 Calibration
 
@@ -921,7 +972,54 @@ Outputs: `oos_predictions.csv`, `trade_ledger.csv`, `selection_log.csv`,
 
 ---
 
-## Appendix B · Execution order after the freeze
+## Appendix B · Version record
+
+**v6, 2026-08-24.** `δ` is held at zero in the confirmatory procedure rather than selected
+from a grid, which reduces the candidate space from 92 to 23. The margins move to the
+exploratory group. Nothing else changed: the metric is still the inner out-of-sample net
+Sharpe, the one-standard-error rule stands, and the 30-position floor stays where it was as a
+degeneracy guard.
+
+The reason came from an engineering smoke test run on a truncated window under v5. Selecting
+over `δ` turned out to let the inner cross-validation choose a model and a trading frequency at
+the same time: `δ` sets the participation rate directly, so the candidate that won was reliably
+whichever one traded least — at the median, 28 active positions in a 500-session inner
+out-of-sample, ranked first out of 92. A Sharpe ratio estimated on 28 non-zero observations and
+selected as the maximum of 92 is not a quantity to build a procedure on.
+
+Two properties of that diagnostic matter for whether acting on it was legitimate. It came
+entirely from inner cross-validation inside the training block, so no out-of-sample information
+entered it. And the change tightens the procedure: one fewer researcher degree of freedom, and
+a trading rule that now matches what §3.3 says it is. The alternative considered and rejected
+was raising the active-position floor, which would have imposed a 15% participation requirement
+picked to fit the diagnostic and would have quietly added "must trade frequently" to the
+hypothesis space.
+
+The smoke run itself is recorded in `results/experiment_registry.csv` as `SMOKE-01` with
+`run_type=engineering_smoke` and `excluded_from_trial_budget=true`. **It inspected structural
+outputs, including position participation, over 63 realised out-of-sample dates. No returns or
+performance statistics were computed or inspected.** It is excluded from the research trial
+budget because it used an informal retune cadence, covered 63 outer dates, and produced no
+performance figure — recording it as a failed experiment would be as inaccurate as leaving it
+out.
+
+Verifying v6 on the same window confirmed the fix — 12 and 8 eligible candidates of 23 at the
+two reselections, against 1 of 92 before — and surfaced one further property, disclosed in
+A.4.1 rather than changed: the one-standard-error rule can select the majority baseline, and the
+positions that follow then reflect the cost environment rather than any prediction. It is
+flagged in the outputs and left alone, because forcing those steps flat would change the
+realised P&L and require another version. The train-minus-validation gaps from that verification
+are worth recording as the clearest thing the diagnostics produced: 0.66 for the baseline, 0.89
+to 1.45 for logistic, 1.63 to 2.94 for random forest, 3.17 to 4.80 for XGBoost, and 5.03 to 9.09
+for LightGBM.
+
+`protocol-v5-frozen` is not overwritten. v6 is a separate tag with a separate configuration
+hash, so the two states remain distinguishable. Both smoke runs are in
+`results/experiment_registry.csv` as `SMOKE-01` and `SMOKE-02`.
+
+---
+
+## Appendix C · Execution order after the freeze
 
 1. Commit the protocol, configuration, code and test results
 2. Tag the freeze; the tag is immutable
