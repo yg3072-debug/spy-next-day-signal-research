@@ -144,8 +144,24 @@ calibration:
   # out-of-sample of 500 rows and three classes, one-vs-rest isotonic sees roughly
   # 167 points per class, well inside the range where it overfits. Sigmoid fits two
   # parameters per class and is stable at this size.
-  min_calibration_samples: 300   # below this the step is skipped and recorded
   implementation: hand_rolled_cross_fit
+  # The nested splitter is pinned too. Leaving it to the default would hand the
+  # implementer a free choice, and TimeSeriesSplit's default would make the first
+  # calibration sub-fold's training block far too small to produce probabilities
+  # worth calibrating.
+  nested_splitter:
+    type: TimeSeriesSplit
+    n_splits: 3
+    test_size: 100               # 300 out-of-fold points from a 499-row inner-train
+    gap: 1
+    min_base_train_samples: 180  # a sub-fold with less is skipped and recorded
+  min_calibration_samples: 200   # total out-of-fold points required
+  min_samples_per_class: 30      # per class, across those points
+  on_requirements_unmet: >
+    Skip calibration for that candidate and fold, use the raw probabilities, and
+    set calibration_skipped on the row. Never fall back to fitting the calibrator
+    on data the base estimator was trained on, and never borrow a calibrator from
+    another fold or another outer step.
   # sklearn's CalibratedClassifierCV cannot be used. It takes one fixed y, but the
   # label thresholds are estimated inside each fold, so the same historical
   # observation can carry different labels in different folds. The cross-fitting is
@@ -183,10 +199,16 @@ expected_return_mapping:
 # ---------------------------------------------------------------- trading rule
 
 position_rule:
-  # w = +1 if mu_hat > (1 + delta_multiple) * 2c ; -1 below the negative of it.
-  # delta is a multiple of the round-trip cost so it stays meaningful when the cost
-  # scenario changes.
-  threshold: cost_determined
+  # h_t = (1 + delta_multiple) * (2c + f_t)
+  # w = +1 if mu_hat > h_t ; -1 if mu_hat < -h_t ; 0 otherwise.
+  #
+  # Financing sits inside the band, not only in the P&L. A band built from 2c
+  # alone admits every trade with 2c < |mu_hat| < 2c + f, and those lose money in
+  # expectation because the financing is owed regardless. The threshold is
+  # therefore time-varying: it tracks the short rate and shrinks on an early
+  # close, exactly as the costs it has to cover do.
+  threshold_formula: "(1 + delta) * (2 * c + f_t)"
+  includes_financing: true
   delta_multiple_grid: [0.0, 0.5, 1.0, 2.0]
   positions: [-1, 0, 1]
 
@@ -248,14 +270,15 @@ selection:
 # ---------------------------------------------------------------- compute budget
 
 compute_budget:
-  # Corrected. The monthly refit is not a single fit: it cross-fits the calibrator
-  # inside outer-train and then refits the base estimator on all of it.
-  fits_per_candidate_per_inner_fold: 5   # 4 nested calibration folds + 1 model fit
-  inner_fits_per_retune: 575             # 23 configs x 5 folds x 5
+  # The monthly refit is not a single fit: it cross-fits the calibrator inside
+  # outer-train and then refits the base estimator on all of it. Counts follow
+  # from the pinned nested splitter (3 sub-folds).
+  fits_per_candidate_per_inner_fold: 4   # 3 nested calibration folds + 1 model fit
+  inner_fits_per_retune: 460             # 23 configs x 5 folds x 4
   retunes: 8
-  fits_per_monthly_refit: 6              # 5 calibration cross-fit + 1 final
+  fits_per_monthly_refit: 4              # 3 calibration cross-fit + 1 final
   outer_steps: 89
-  total_fits_approx: 5134
+  total_fits_approx: 4036
 
 # ------------------------------------------------------------------ determinism
 
