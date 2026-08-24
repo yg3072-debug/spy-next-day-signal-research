@@ -10,5 +10,10 @@
   {
     "id": "E1",
     "status": "skipped"
+  },
+  {
+    "id": "E5",
+    "status": "ok",
+    "minutes": 2.13
   }
 ]

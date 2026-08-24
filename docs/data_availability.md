@@ -5,7 +5,7 @@ and every transformation applied between the two. A field may only enter a featu
 session *t* if the whole pipeline below is complete before the decision point for *t*.
 
 **Snapshot:** `data/market_inputs_2026-08-21.csv`
-**SHA-256:** `103a837de14b5226283c2b13f6ff0781def29565eec9f9d4ae8fc23510ffa507`
+**SHA-256:** `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a`
 **Sessions:** 2,926 — 2015-01-02 to 2026-08-21 (11.6 years), 23 early closes
 **Manifest:** `data/market_inputs_2026-08-21.manifest.json`
 **Reproduce:** `python scripts/freeze_market_data.py` · **Check:** `... --verify`
