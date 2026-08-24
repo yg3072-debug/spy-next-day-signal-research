@@ -1,0 +1,34 @@
+config          config/p1.yaml  c219757bb47c087e...
+overlay         config/exploratory/E21.yaml  7cc6c10c6af04e0d...
+execution       primary_open_to_close
+modelling set   2865 sessions, 2015-03-31 to 2026-08-20
+initial train   1000
+outer steps     89  (step 21, retune every 12)
+candidates      23  over 23 fitted models
+
+  step   0  retune  chose majority_baseline|{}   eligible 18/23
+  step  12  retune  chose majority_baseline|{}   eligible 9/23
+  step  24  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 10/23
+  step  36  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 20}   eligible 12/23
+  step  48  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 8/23
+  step  60  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 20}   eligible 2/23
+  step  72  retune  chose majority_baseline|{}   eligible 12/23
+  step  84  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/23
+
+run complete in 1419.0s
+  oos_predictions.csv   1865 rows x 12 cols
+    columns             ['step', 'model', 'params', 'delta', 'p_short', 'p_flat', 'p_long', 'mu_hat', 'position', 'realised_o2c', 'financing', 'calibration_skipped']
+    dates               2019-03-21 to 2026-08-20
+    positions           {-1.0: np.int64(118), 0.0: np.int64(1257), 1.0: np.int64(490)}
+    calibration skipped 0 rows
+  selection_log.csv     8 retunes
+  candidate_diagnostics 184 rows (8 retunes x 23 candidates)
+  feature_stability.csv 45 distinct features selected
+  calibration_diagnostics 920 rows (8 retunes x 5 inner folds x candidates)
+  run_manifest.json     written
+
+--- stderr ---
+D:\SPY Prediction\repo\scripts\run_p1.py:521: RuntimeWarning: Mean of empty slice
+  train_scores = {k: float(np.nanmean(v)) for k, v in fold_train.items()}
+D:\SPY Prediction\repo\scripts\run_p1.py:521: RuntimeWarning: Mean of empty slice
+  train_scores = {k: float(np.nanmean(v)) for k, v in fold_train.items()}

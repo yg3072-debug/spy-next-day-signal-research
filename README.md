@@ -197,7 +197,14 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**80 tests** run on every commit.
+**97 tests** run on every commit, including two coverage contracts: every output the
+configuration declares must exist and carry its columns, and every trial identifier the
+protocol registers must have a status in the registry. Both exist because both gaps
+happened — silently — and neither failed anything at the time.
+
+**Errors found after the run are listed in [`docs/errata.md`](docs/errata.md), classified
+by what they affected.** None affected P1's positions or returns; one affected an
+exploratory run, whose incorrect execution is retained in the registry and counted.
 
 ---
 
@@ -216,13 +223,14 @@ docs/       research_protocol.md     the frozen protocol
             alt_feature_dictionary.md    likewise, for the text features
             scraping_notes.md        alternative-data lineage and repair
             decision_log.md          every methodological decision and its rationale
+            errata.md                every error found after the run, by impact
 reports/    p1_confirmatory_result.md   the confirmatory result
             exploratory_results.md       the E group, in full
             alternative_data_appendix.md the text layer
 results/    benchmarks, the confirmatory run, every exploratory run, the registry
 scripts/    freeze_*, build_*, run_*, evaluate_*, verify_hashes, registry
 src/        features.py, altdata.py, execution.py, pipeline.py, stats.py, strategy.py
-tests/      80 checks
+tests/      97 checks
 ```
 
 ---
