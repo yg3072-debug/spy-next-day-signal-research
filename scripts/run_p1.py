@@ -50,12 +50,16 @@ from build_benchmarks import cash_return, intraday_financing, load_snapshot  # n
 # ------------------------------------------------------------------- candidates
 
 def build_candidates(cfg: dict) -> list[dict]:
-    """The full cross product of model configuration and delta, in ordering order.
+    """Every model configuration, in the order the simplicity key ranks them.
 
-    Selected in one pass. Choosing delta per family first and then comparing
-    families would be a two-stage selection, which is a second comparison hidden
-    inside the first.
+    Delta is fixed, not selected. Selecting over it made the inner
+    cross-validation choose a model and a trading frequency at the same time, and
+    because delta drives the participation rate directly, the winner was reliably
+    whichever candidate traded least — a Sharpe ranked first out of 92 while being
+    estimated on about 30 non-zero observations. The margins are a declared
+    sensitivity now, not a decision this procedure makes.
     """
+    delta = float(cfg["position_rule"]["delta_multiple"])
     out = []
     for family, spec in cfg["models"].items():
         grid = spec.get("grid")
@@ -64,46 +68,50 @@ def build_candidates(cfg: dict) -> list[dict]:
             if isinstance(grid, dict) else list(grid)
         )
         for rank, params in enumerate(combos):
-            for delta in cfg["position_rule"]["delta_multiple_grid"]:
-                out.append({
-                    "family": family,
-                    "params": params,
-                    "delta": float(delta),
-                    "complexity_rank": spec["complexity_rank"],
-                    "within_family_rank": rank,
-                    "spec": spec,
-                    "id": f"{family}|{params}|d{delta}",
-                })
-    # simplicity_key: (complexity_rank, within_family_rank, -delta)
-    out.sort(key=lambda c: (c["complexity_rank"], c["within_family_rank"], -c["delta"]))
+            out.append({
+                "family": family, "params": params, "delta": delta,
+                "complexity_rank": spec["complexity_rank"],
+                "within_family_rank": rank, "spec": spec,
+                "id": f"{family}|{params}",
+            })
+    out.sort(key=lambda c: (c["complexity_rank"], c["within_family_rank"]))
     return out
 
 
 def model_configs(cfg: dict) -> list[dict]:
-    """One entry per fitted model, i.e. candidates collapsed over delta.
+    """One entry per fitted model. With delta fixed, this is the candidate list."""
+    return build_candidates(cfg)
 
-    Delta is swept on mu_hat afterwards and needs no refit, so the loop fits each
-    model once and reuses it across the delta grid.
-    """
-    seen, out = set(), []
-    for c in build_candidates(cfg):
-        key = (c["family"], repr(c["params"]))
-        if key not in seen:
-            seen.add(key)
-            out.append(c)
-    return out
+
+def _predict_only(estimator, X: pd.DataFrame) -> pd.DataFrame:
+    """Probabilities from an already-fitted estimator, without refitting it."""
+    from src.pipeline import _proba_frame, family_is_xgboost
+    if family_is_xgboost(estimator):
+        return pd.DataFrame(estimator.predict_proba(X), index=X.index, columns=CLASSES)
+    return _proba_frame(estimator, X)
+
+
+def net_returns(mu, realised, financing, cost_bps, delta):
+    """Positions from the band, and the net excess return they earn."""
+    c = cost_bps / 1e4
+    w = positions_from_expected_return(mu, cost_bps, financing.loc[mu.index], delta)
+    net = w * realised.loc[mu.index] - 2 * c * w.abs() - financing.loc[mu.index] * w.abs()
+    return w, net
 
 
 # ------------------------------------------------------------------- one fold
 
 def fit_slice(
     X_train, z_train, target_log_train, returns_train, X_pred,
-    cfg, groups, seed, only=None,
+    cfg, groups, seed, only=None, also_predict_train=False,
 ):
     """Everything a slice is allowed to learn, learned from that slice alone.
 
     Returns calibrated probabilities on `X_pred`, the class-conditional means, the
-    features chosen, and whether calibration was possible.
+    features chosen, and whether calibration was possible. With
+    `also_predict_train` it additionally returns in-sample predictions from the
+    same fitted model, which feed the train-minus-validation gap reported in the
+    diagnostics file.
     """
     q_low, q_high = estimate_quantiles(z_train, tuple(cfg["target"]["quantiles"]))
     y_train = apply_labels(z_train, q_low, q_high)
@@ -135,14 +143,20 @@ def fit_slice(
         )
         calibrator = SigmoidCalibrator.fit(oof_proba, oof_y) if viable else None
 
-        raw = fit_and_predict_proba(build(), Xt, y_train, Xp)
+        estimator = build()
+        raw = fit_and_predict_proba(estimator, Xt, y_train, Xp)
         proba = calibrator.transform(raw) if calibrator else raw
         key = (candidate["family"], repr(candidate["params"]))
-        results[key] = {
+        entry = {
             "mu_hat": expected_return(proba, means),
             "proba": proba,
             "calibration_skipped": not viable,
         }
+        if also_predict_train:
+            raw_in = _predict_only(estimator, Xt)
+            proba_in = calibrator.transform(raw_in) if calibrator else raw_in
+            entry["mu_hat_train"] = expected_return(proba_in, means)
+        results[key] = entry
 
     return {
         "predictions": results,
@@ -162,32 +176,41 @@ def score_candidates(
     cfg: dict,
     candidates: list[dict],
     seed: int,
+    train_scores: dict | None = None,
 ) -> pd.DataFrame:
     """Net Sharpe of every candidate on the concatenated inner out-of-sample.
 
     Computed once on the concatenated series, never as an average of per-fold
     Sharpe ratios: the average of fold Sharpes is not the Sharpe of the series,
     and it hides drift between folds.
+
+    `train_scores` carries a mean in-sample score per candidate, averaged over
+    folds. The protocol's objection to averaging across folds is about the metric
+    that decides something; this one only ever appears in the diagnostics file.
     """
+    train_scores = train_scores or {}
     cost = cfg["selection"]["metric_cost_bps_per_side"]
-    c = cost / 1e4
+    min_active = cfg["selection"]["constraints"]["min_active_positions_inner_oos"]
     rows = []
     for cand in candidates:
         key = (cand["family"], repr(cand["params"]))
         mu = inner.get(key)
         if mu is None or mu.empty:
             continue
-        w = positions_from_expected_return(mu, cost, financing_held.loc[mu.index], cand["delta"])
-        net = w * realised.loc[mu.index] - 2 * c * w.abs() - financing_held.loc[mu.index] * w.abs()
+        w, net = net_returns(mu, realised, financing_held, cost, cand["delta"])
         active = int((w != 0).sum())
         s = sharpe(net.to_numpy())
+        in_sample = train_scores.get(key, np.nan)
         rows.append({
             "id": cand["id"], "family": cand["family"], "params": repr(cand["params"]),
             "delta": cand["delta"], "complexity_rank": cand["complexity_rank"],
             "within_family_rank": cand["within_family_rank"],
-            "active_positions": active, "score": s,
-            "degenerate": active < cfg["selection"]["constraints"]["min_active_positions_inner_oos"]
-                          or not np.isfinite(s),
+            "active_positions": active,
+            "turnover_per_year": float(w.diff().abs().fillna(0).mean() * TRADING_DAYS),
+            "score": s,
+            "in_sample_score": in_sample,
+            "train_minus_oos_score": in_sample - s,
+            "degenerate": active < min_active or not np.isfinite(s),
             "net": net,
         })
     return pd.DataFrame(rows)
@@ -289,6 +312,7 @@ def main() -> int:
     print()
 
     frozen, oos_rows, selection_log, stability = None, [], [], []
+    candidate_diagnostics = []
     t0 = time.perf_counter()
 
     for step_i, start in enumerate(starts):
@@ -298,25 +322,56 @@ def main() -> int:
 
         if step_i % retune_every == 0:
             inner: dict[tuple, list] = {}
+            fold_train: dict[tuple, list] = {}
+            cost = cfg["selection"]["metric_cost_bps_per_side"]
             for tr, va in inner_splitter.split(Xtr):
                 itr, iva = train_idx[tr], train_idx[va]
                 fold = fit_slice(
                     features_all.loc[itr], z_all.loc[itr], target_log.loc[itr],
                     target_simple.loc[itr], features_all.loc[iva],
-                    cfg, groups, seed + step_i,
+                    cfg, groups, seed + step_i, also_predict_train=True,
                 )
                 if fold is None:
                     continue
                 for key, res in fold["predictions"].items():
                     inner.setdefault(key, []).append(res["mu_hat"])
+                    _, net_in = net_returns(
+                        res["mu_hat_train"], target_simple, financing_held,
+                        cost, candidates[0]["delta"],
+                    )
+                    fold_train.setdefault(key, []).append(sharpe(net_in.to_numpy()))
             concatenated = {k: pd.concat(v) for k, v in inner.items() if v}
+            train_scores = {k: float(np.nanmean(v)) for k, v in fold_train.items()}
             scored = score_candidates(
-                concatenated, target_simple, financing_held, cfg, candidates, seed + step_i
+                concatenated, target_simple, financing_held, cfg, candidates,
+                seed + step_i, train_scores=train_scores,
             )
             frozen, why = one_standard_error_choice(scored, cfg, seed + step_i)
+
+            # Every candidate, with the numbers behind the choice. Diagnostics, not
+            # gates: a reader can see why the rule picked what it picked without
+            # any of these becoming an extra threshold.
+            se_cfg = cfg["selection"]["standard_error"]
+            diag = scored.drop(columns=["net"]).copy()
+            diag.insert(0, "step", step_i)
+            diag.insert(1, "date", str(train_idx[-1].date()))
+            diag["standard_error"] = [
+                bootstrap_statistic(row.net, sharpe, se_cfg["block_sessions"],
+                                    se_cfg["reps"], seed=seed + step_i + se_cfg["seed_offset"])["se"]
+                if not row.degenerate else np.nan
+                for row in scored.itertuples()
+            ]
+            diag["chosen"] = diag.id == frozen.get("id")
+            candidate_diagnostics.append(diag)
+
+            # Flagged, not corrected. When the baseline wins the one-standard-error
+            # rule, the positions that follow compare an unconditional drift estimate
+            # against the prevailing cost level and carry no feature-based signal.
+            # Protocol A.4.1 says why no rule forces them flat.
             selection_log.append({
                 "step": step_i, "date": str(train_idx[-1].date()),
                 "chosen_id": frozen.get("id"), "chosen_score": frozen.get("score"),
+                "baseline_selected": frozen.get("family") == "majority_baseline",
                 "n_candidates": len(scored), **why,
             })
             print(f"  step {step_i:>3}  retune  chose {frozen.get('id')}"
@@ -357,6 +412,10 @@ def main() -> int:
     pd.DataFrame(selection_log).to_csv(outdir / "selection_log.csv", index=False)
     stab = pd.DataFrame(stability).groupby("feature").size().rename("steps_selected")
     stab.sort_values(ascending=False).to_csv(outdir / "feature_stability.csv")
+    if candidate_diagnostics:
+        pd.concat(candidate_diagnostics).to_csv(
+            outdir / "candidate_diagnostics.csv", index=False, float_format="%.8g"
+        )
 
     (outdir / "run_manifest.json").write_text(json.dumps({
         "mode": "smoke" if args.smoke else "confirmatory",
@@ -377,6 +436,10 @@ def main() -> int:
     print(f"    positions           {dict(oos.position.value_counts().sort_index())}")
     print(f"    calibration skipped {int(oos.calibration_skipped.sum())} rows")
     print(f"  selection_log.csv     {len(selection_log)} retunes")
+    if candidate_diagnostics:
+        nd = sum(len(d) for d in candidate_diagnostics)
+        print(f"  candidate_diagnostics {nd} rows ({len(candidate_diagnostics)} retunes"
+              f" x {len(candidate_diagnostics[0])} candidates)")
     print(f"  feature_stability.csv {len(stab)} distinct features selected")
     print(f"  run_manifest.json     written")
     if args.smoke:
