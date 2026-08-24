@@ -12,6 +12,7 @@ from __future__ import annotations
 import glob
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -54,6 +55,21 @@ def main() -> int:
             failures.append(f"docs/research_protocol.md does not quote the {label} hash {digest}")
         else:
             print(f"ok   protocol quotes the {label} hash")
+
+    # Quoting the right hash once is not enough: the v5 -> v6 revision left a stale
+    # digest behind in one table, which is exactly the defect a reader checking the
+    # freeze would find. Every hash-like token in the protocol must resolve to a
+    # committed artefact, not merely one of them.
+    known = {actual, sha256_of(sorted(ROOT.glob("data/market_inputs_*.csv"))[-1])}
+    # At least one a-f, so an eight-digit date in backticks is not mistaken for a digest.
+    quoted = {m for m in re.findall(r"`([0-9a-f]{8,64})…?`", protocol) if re.search(r"[a-f]", m)}
+    for token in sorted(quoted):
+        if not any(d.startswith(token.rstrip("…")) for d in known):
+            failures.append(
+                f"docs/research_protocol.md quotes `{token}`, which matches no committed artefact"
+            )
+    if not failures:
+        print(f"ok   every hash quoted in the protocol resolves ({len(quoted)} distinct)")
 
     if failures:
         print("\n" + "\n".join(failures), file=sys.stderr)

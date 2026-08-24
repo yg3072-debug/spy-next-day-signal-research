@@ -606,7 +606,7 @@ Two kinds of sensitivity must therefore be distinguished, or the budget is breac
 
 | ID | Kind | Content |
 |---|---|---|
-| **P1** | **Confirmatory primary procedure** | `config/p1.yaml`, SHA `e6c1776d…` |
+| **P1** | **Confirmatory primary procedure** | `config/p1.yaml`, SHA `c219757b…` |
 | E1–E4 | Exploratory | Feature-group ablation: cross-market, macro, intraday, volume |
 | E5–E8 | Exploratory | Single model family fixed, no dynamic selection |
 | E9–E11 | Exploratory | Naive arg-max, fixed-quantile band, volatility targeting |
