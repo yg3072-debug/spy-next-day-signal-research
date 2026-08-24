@@ -30,10 +30,12 @@ excess over always-long, decomposed
 ```
 
 **Every part of the point estimate comes from trading less, and the term that would constitute
-predictive ability is negative.** Two quantities computed without reference to the P&L agree: a
-Brier skill score of +0.012 against a training-base-rate reference, and a regression slope of
-realised return on predicted return of **−0.085**. Three independent lines of evidence point
-the same way, which is a stronger negative than one failed test.
+predictive ability is negative.** Two quantities computed without reference to the P&L show no
+skill in either direction: a Brier skill score of **+0.012** against a training-base-rate
+reference, and a regression slope of realised return on predicted return of **−0.085 with a 95%
+interval of [−1.005, +0.891]**. The slope's point estimate is negative but its interval spans
+zero so widely that it is evidence of nothing; the honest reading of both measures is that no
+predictive ability is detectable.
 
 ---
 
@@ -103,13 +105,20 @@ statistically indistinguishable from zero either way.
 
 An advantage in P&L can come from saving cost. These two quantities cannot.
 
-| Quantity | Value | Reading |
-|---|---:|---|
-| Multi-class Brier skill vs training base rate | **+0.0122** | Essentially nil |
-| Regression slope of realised return on `mu_hat` | **−0.085** | Negative: higher predicted return went with marginally lower realised return |
+| Quantity | Value | 95% interval | Reading |
+|---|---:|---:|---|
+| Multi-class Brier skill vs training base rate | **+0.0122** | — | Essentially nil |
+| Regression slope of realised return on `mu_hat` | **−0.085** | [−1.005, +0.891] | Indistinguishable from zero |
 
 A model with genuine discriminating power would show a positive Brier skill and a positive
-slope. Neither appears.
+slope with an interval clear of zero. Neither appears.
+
+The slope deserves a caution against over-reading it in the other direction too. Its point
+estimate is negative, which would suggest predictions running the wrong way, but the paired
+bootstrap interval runs from −1.005 to +0.891. **A negative point estimate inside an interval
+that wide is not evidence of anything**, and reporting it as though the model were reliably
+anti-predictive would be the same error as reporting a positive one as alpha. What the two
+measures jointly support is the absence of detectable skill, not its negative.
 
 ---
 

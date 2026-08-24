@@ -36,8 +36,8 @@ from src.pipeline import (  # noqa: E402
     CLASSES, apply_labels, estimate_quantiles, vol_adjusted_target,
 )
 from src.stats import (  # noqa: E402
-    ann_mean, bootstrap_difference, bootstrap_statistic,
-    jobson_korkie_memmel, politis_white_block, sharpe,
+    ann_mean, bootstrap_difference, bootstrap_joint, bootstrap_statistic,
+    jobson_korkie_memmel, ols_slope, politis_white_block, sharpe,
 )
 
 
@@ -161,12 +161,14 @@ def main() -> int:
     bs_ref = multiclass_brier(base_rates, y)
     brier_skill = 1.0 - bs / bs_ref if bs_ref > 0 else np.nan
 
+    # The slope of realised return on predicted return, with a paired interval.
+    # Resampling the two series independently would destroy the relationship the
+    # slope exists to measure, so both are drawn with the same block indices.
     ok = oos.mu_hat.notna() & realised.notna()
-    slope = np.polyfit(oos.mu_hat[ok], realised[ok], 1)[0]
-    slope_boot = bootstrap_statistic(
-        pd.Series(oos.mu_hat[ok].to_numpy() * realised[ok].to_numpy(), index=idx[ok]),
-        lambda a: float(a.mean()), args.block, args.reps,
+    slope_boot = bootstrap_joint(
+        oos.mu_hat[ok], realised[ok], ols_slope, args.block, args.reps,
     )
+    slope = slope_boot["point"]
 
     # ------------------------------------------------------------ outputs
     ledger = pd.DataFrame({
@@ -226,7 +228,9 @@ def main() -> int:
         "ann_financing_saving": float(fin_saving.mean() * TRADING_DAYS),
         "brier_score": bs, "brier_reference": bs_ref, "brier_skill": brier_skill,
         "mu_hat_slope_on_realised": float(slope),
-        "mu_hat_realised_covariance_ci_low": slope_boot["ci_low"],
+        "mu_hat_slope_ci_low": slope_boot["ci_low"],
+        "mu_hat_slope_ci_high": slope_boot["ci_high"],
+        "mu_hat_slope_bootstrap_fraction_le_zero": slope_boot["fraction_le_zero"],
         "steps_with_baseline_selected": int(selection.get(
             "baseline_selected", pd.Series(dtype=bool)).sum()) if "baseline_selected" in selection else None,
         "verdict": verdict,
@@ -260,7 +264,8 @@ def main() -> int:
     print()
     print("predictive evidence, independent of P&L")
     print(f"  Brier skill vs training base rate  {brier_skill:+.4f}")
-    print(f"  slope of realised on mu_hat        {slope:+.4f}")
+    print(f"  slope of realised on mu_hat        {slope:+.4f}"
+          f"   95% CI [{slope_boot['ci_low']:+.3f}, {slope_boot['ci_high']:+.3f}]")
     print()
     print(f"wrote trade_ledger.csv, statistical_tests.csv, regime_performance.csv,"
           f" cost_sensitivity.csv to {outdir}")
