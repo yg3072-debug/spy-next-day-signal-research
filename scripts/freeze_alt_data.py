@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import json
 import re
 import sys
@@ -45,11 +46,14 @@ import pandas_market_calendars as mcal
 
 ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / "data" / "alt"
-SOURCE = Path(r"D:\SPY Prediction\NLP")
+# The per-document text is third-party content and is not committed, so where it
+# lives is a local matter. `ALT_DATA_SOURCE` points at the directory holding the two
+# raw files; `data/raw/` inside the repository is the default and is gitignored.
+# docs/scraping_notes.md names both sources and their checksums.
+SOURCE = Path(os.environ.get("ALT_DATA_SOURCE", ROOT / "data" / "raw"))
 
-HEADLINES = SOURCE / ("NLP Final Data and Code/S&P 500 with Financial News "
-                      "Headlines (2008\u20132024)/sp500_headlines_2008_2024.csv")
-POSTS = SOURCE / "scraped Trump TruthSocial Data/trump_archive_full_cleaned.csv"
+HEADLINES = SOURCE / "sp500_headlines_2008_2024.csv"
+POSTS = SOURCE / "trump_archive_full_cleaned.csv"
 
 TZ = "America/New_York"
 RAW_FORMAT = "%A, %B %d, %Y, %I:%M %p"
@@ -274,15 +278,56 @@ def main() -> int:
     posts.to_csv(posts_out, index=False)
     heads.to_csv(heads_out, index=False)
 
+    # The aggregates are built here too, so their checksums are part of the same
+    # manifest the build writes. Adding them afterwards from another script meant a
+    # rebuild silently dropped them, and --verify then checked nothing on a clone
+    # while still reporting success.
+    sys.path.insert(0, str(ROOT))
+    from src.altdata import build_news_features, build_truth_social_features, load_lexicon
+    derived = {}
+    try:
+        lexicon = load_lexicon()
+        sessions = pd.read_csv(sorted((ROOT / "data").glob("market_inputs_*.csv"))[-1],
+                               index_col="Date", parse_dates=True).index
+        for label, frame in (("news", build_news_features(sessions, lexicon)),
+                             ("truth_social", build_truth_social_features(sessions, lexicon))):
+            out = DEST / f"{label}_session_features.csv"
+            frame.to_csv(out, float_format="%.10g")
+            derived[out.name] = sha256_of(out)
+        print(f"derived features  {', '.join(derived)}")
+    except FileNotFoundError as exc:
+        print(f"derived features  skipped: {exc}")
+
+    def relative(path: Path) -> str:
+        """Paths in the manifest are relative to the repository, never absolute.
+
+        An absolute path records whose machine built the file, which is neither
+        useful to a reader nor appropriate in a public repository.
+        """
+        try:
+            return str(path.resolve().relative_to(ROOT)).replace("\\", "/")
+        except ValueError:
+            return path.name
+
     manifest = {
         "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "session_mapping": "bucket_t = (close_{t-1}, close_t], America/New_York, DST handled",
         "boundary": "left-open, right-closed",
         "calendar": "NYSE via pandas_market_calendars",
         "sources": {
-            "truth_social": {"path": str(POSTS), "sha256": sha256_of(POSTS)},
-            "news_headlines": {"path": str(HEADLINES), "sha256": sha256_of(HEADLINES)},
+            "truth_social": {"path": relative(POSTS), "sha256": sha256_of(POSTS)},
+            "news_headlines": {"path": relative(HEADLINES), "sha256": sha256_of(HEADLINES)},
         },
+        "derived_features": derived,
+        "redistribution": (
+            "The per-document text files are NOT committed. They are third-party "
+            "content whose redistribution is the publisher's decision, not this "
+            "project's, and the same reasoning applies to them as to the "
+            "Loughran-McDonald dictionary. What is committed is the session-level "
+            "aggregate the study consumes, plus the source checksums above, so a "
+            "reader who obtains the same raw files can confirm they have the same "
+            "bytes. Set ALT_DATA_SOURCE to point at them and rerun this script."
+        ),
         "truth_social": post_audit,
         "news_headlines": head_audit,
         "sha256": {posts_out.name: sha256_of(posts_out), heads_out.name: sha256_of(heads_out)},

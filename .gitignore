@@ -25,3 +25,9 @@ results/smoke/
 # committed, along with the source checksums, so the derivation stays verifiable.
 data/alt/truth_social_sessions.csv
 data/alt/news_headlines_sessions.csv
+
+# Third-party inputs, not redistributed. scripts/fetch_lexicon.py retrieves the
+# dictionary and verifies its checksum; docs/scraping_notes.md names both text
+# sources. Override the locations with LM_DICTIONARY and ALT_DATA_SOURCE.
+vendor/
+data/raw/

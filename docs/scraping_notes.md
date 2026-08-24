@@ -263,6 +263,23 @@ bespoke part under separate names is the point.
 
 ---
 
+## 4. Where the inputs live
+
+None of the raw inputs is committed. Three environment variables control where the
+scripts look, each defaulting to a gitignored directory inside the repository:
+
+| Variable | Default | Holds |
+|---|---|---|
+| `LM_DICTIONARY` | `vendor/LM_MasterDictionary.csv` | the Loughran–McDonald dictionary, fetched by `scripts/fetch_lexicon.py` |
+| `ALT_DATA_SOURCE` | `data/raw/` | `trump_archive_full_cleaned.csv` and `sp500_headlines_2008_2024.csv` |
+| `SCRAPER_CONTACT` | unset | an address to identify the crawler in its User-Agent, if you run `diagnose_empty_posts.py` |
+
+Paths recorded in `data/alt/alt_data.manifest.json` are relative to the repository.
+An absolute path would record whose machine built the file, which is no use to a
+reader.
+
+---
+
 ## 4. Compliance
 
 Both sources are publicly accessible archives of published material. Collection was

@@ -18,17 +18,17 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import sys
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
 
 VERSION = "Loughran-McDonald_MasterDictionary_1993-2025.csv, updated March 2026"
 PAGE = "https://sraf.nd.edu/loughranmcdonald-master-dictionary/"
 DRIVE_ID = "1iq2RUf8qGFEAk1g8wQntP3habOnR3fXF"
 URL = f"https://drive.usercontent.google.com/download?id={DRIVE_ID}&export=download&confirm=t"
 SHA256 = "e2d1328682bab7d2187684fb9f5420bb730401c9eefc00daf835edd203f4859d"
-DEFAULT = Path(r"D:\SPY Prediction\_vendor\LM_MasterDictionary.csv")
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT = Path(os.environ.get("LM_DICTIONARY", ROOT / "vendor" / "LM_MasterDictionary.csv"))
 
 LICENCE = (
     "Free for use in academic research. Commercial applications require a licence "

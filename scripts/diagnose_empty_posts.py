@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import sys
 import time
@@ -38,10 +39,12 @@ import requests
 from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = Path(r"D:\SPY Prediction\NLP\scraped Trump TruthSocial Data"
-              r"\trump_archive_full_cleaned.csv")
+SOURCE = Path(os.environ.get("ALT_DATA_SOURCE", ROOT / "data" / "raw")) \
+    / "trump_archive_full_cleaned.csv"
 BASE = "https://trumpstruth.org/statuses"
-HEADERS = {"User-Agent": "Mozilla/5.0 (academic research; yg3072@columbia.edu)"}
+CONTACT = os.environ.get("SCRAPER_CONTACT", "")
+HEADERS = {"User-Agent": "Mozilla/5.0 (academic research"
+                         + (f"; {CONTACT}" if CONTACT else "") + ")"}
 SLEEP = 1.0          # the site's robots.txt permits crawling; this is courtesy
 SEED = 20260824
 
