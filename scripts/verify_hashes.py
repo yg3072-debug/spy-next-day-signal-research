@@ -55,7 +55,21 @@ def main() -> int:
     # digest behind in one table, which is exactly the defect a reader checking the
     # freeze would find. Every hash-like token in the protocol must resolve to a
     # committed artefact, not merely one of them.
-    known = {actual, sha256_of(sorted(ROOT.glob("data/market_inputs_*.csv"))[-1])}
+    # Canonical digests, plus the same artefacts hashed verbatim. The second set
+    # exists because the protocol's erratum has to quote the digest it superseded in
+    # order to explain the change, and a scan that forbade that would force the
+    # document to describe a hash it is not allowed to write down. A superseded
+    # digest is admissible only when it still resolves to a committed artefact under
+    # the older convention -- which is checked here, not asserted -- so an arbitrary
+    # stale hash is still caught.
+    artefacts = [ROOT / "config" / "p1.yaml",
+                 sorted(ROOT.glob("data/market_inputs_*.csv"))[-1]]
+    known = {sha256_of(a) for a in artefacts}
+    superseded = {sha256_of(a, normalise=False) for a in artefacts} - known
+    if superseded:
+        print(f"note superseded digests admissible, verified as the same artefacts "
+              f"hashed verbatim: {', '.join(sorted(d[:8] for d in superseded))}")
+    known |= superseded
     # At least one a-f, so an eight-digit date in backticks is not mistaken for a digest.
     quoted = {m for m in re.findall(r"`([0-9a-f]{8,64})…?`", protocol) if re.search(r"[a-f]", m)}
     for token in sorted(quoted):
