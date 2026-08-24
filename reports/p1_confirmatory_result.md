@@ -151,6 +151,32 @@ series suggests 3.8, so the fixed choice is the conservative one. The verdict do
 | 10 | −0.494 | −7.31% | fails both |
 | 5 | −0.516 | −7.32% | fails both |
 
+**Calibration, out-of-sample for the calibrator as well as the model.** The
+configuration requires four calibration diagnostics. Three are measured on the
+calibrator's own fitting sample, which is in-sample for it and flatters it; those
+are stamped `eligible_as_confirmatory_evidence=false` in
+`results/calibration_diagnostics.csv`. The comparison below is on outer-validation
+rows the model and the calibrator had both never seen:
+
+| | Brier |
+|---|---:|
+| Uncalibrated probabilities | 0.62591 |
+| Calibrated probabilities | 0.62646 |
+| **Difference** | **+0.00056** |
+| Fixed 25/50/25 reference | 0.63425 |
+
+**Calibrating made the probabilities very slightly worse out of sample**, not
+better. The in-sample view suggested otherwise by a wide margin — for LightGBM,
+0.694 before against 0.616 after — which is exactly what fitting a calibrator on a
+sample and then scoring it on that same sample produces. Reporting that pair
+without the distinction would have claimed a benefit the out-of-sample evidence
+does not support.
+
+The reliability curve is in `results/outer_reliability_curve.csv`. In the bin
+holding most of the mass, the long-class probability is well behaved — 0.255
+predicted against 0.257 realised over 1,386 sessions — with mild over-confidence
+above 0.34.
+
 **Cost.** Positions are those produced at the base cost; only the execution cost varies.
 
 | Cost per side | 0 bp | 1 bp | **2 bp** | 5 bp | 10 bp |

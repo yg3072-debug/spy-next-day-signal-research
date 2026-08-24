@@ -59,6 +59,7 @@ on shared rows.
 | E18 | seed 20260825 | −0.141 | −1.29% | 33.4% | 1.089 | +0.003 | [−0.308, +0.346] |
 | E19 | seed 20260826 | −0.175 | −1.57% | 32.1% | 1.067 | −0.031 | [−0.436, +0.359] |
 | E20 | WTI for Brent *(1,858 sessions)* | −0.031 | −0.31% | 41.6% | 1.163 | +0.057 | [−0.538, +0.634] |
+| E21 | second data vintage | −0.156 | −1.38% | 33.0% | 1.081 | −0.012 | [−0.432, +0.369] |
 
 The close-to-close specifications are scored against their own always-long
 benchmark and are not compared with P1, because they are a different strategy
@@ -129,6 +130,57 @@ cost band still produces Flat whenever `mu_hat` fails to clear it. Participation
 nevertheless rises to 43–45% from P1's 33%. Whether E7's result comes from LightGBM
 being the right family or from holding a position more often is not identified by
 this design, and nothing here separates them.
+
+---
+
+## 3b. E21 — the data vintage, and what it exposes
+
+E21 downloads the same window a second time and reruns the identical procedure
+against it. It was pre-registered in §7.2, omitted when the overlays were written,
+and run afterwards; the registry records `delay_reason=implementation_omission`
+and `headline_eligible=false`.
+
+The frozen snapshot was not touched. The second vintage was written to its own
+directory with its own SHA-256 (`020d9ad9…` against the frozen `9b337ca7…`), with
+the end date pinned so it covers exactly the same 2,926 sessions and no later ones.
+The two were compared field by field **before** the run, and the run proceeded
+regardless, as pre-registered.
+
+**What changed in the data:**
+
+| Field | Cells differing | Largest relative difference |
+|---|---:|---:|
+| SPY open/high/low/close, QQQ, IWM, DIA | 2,057–2,469 each | ~8 × 10⁻⁷ |
+| DGS3MO, DTB3, DGS2, DGS10 | **1 each** | **1.1 × 10⁻²** |
+
+The equity differences are float-level, consistent with rounding inside the
+vendor's adjustment. The Treasury revisions are real but land entirely on
+**2026-08-21** — the snapshot's final session, where the published figures were
+still provisional when the first snapshot was taken.
+
+**What changed in the output is the part worth reading:**
+
+| | |
+|---|---:|
+| Sharpe, frozen vintage | −0.1444 |
+| Sharpe, second vintage | −0.1559 |
+| ΔSharpe | −0.0116, interval [−0.432, +0.369] |
+| **Sessions with an identical position** | **1,692 of 1,865 (90.7%)** |
+| Sessions with an identical selected model | 86.5% |
+| Largest `mu_hat` difference | 2.4 × 10⁻³ |
+
+**Differences at the seventh decimal place moved 9.3% of the positions.** The
+mechanism is the one the seed replicates already pointed at: the
+one-standard-error rule is choosing among candidates that are nearly tied, so an
+arbitrarily small perturbation flips which one wins, and a different model produces
+different positions for months afterwards.
+
+The distinction this draws is worth stating precisely. **The verdict is robust and
+the trades are not.** ΔSharpe of −0.0116 is an order of magnitude inside the 0.156
+that reseeding alone produces, so the conclusion does not depend on which vintage
+was downloaded. But anyone who read a specific position off this study as a
+recommendation would be reading something that a vendor's rounding could have
+reversed.
 
 ---
 
