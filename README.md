@@ -84,6 +84,35 @@ findings, and only the first is in evidence.
 
 ---
 
+## The row that is not the headline
+
+The pre-registered exploratory group has been run in full. One of its specifications —
+LightGBM held fixed for the whole sample instead of reselected — returned **+3.74% a year at a
+Sharpe of +0.357 and turned one dollar into 1.564**, against cash's 1.235 and the confirmatory
+procedure's 1.086. It is the best number in the study.
+
+It is reported, in specification order, alongside every other row, and it is not the finding:
+
+- its Sharpe difference against the confirmatory run is +0.501 with an interval of **[−0.107, +1.138]**
+- it is the maximum of **43 realised strategy paths**, and the expected maximum from pure noise
+  at that count and spread is **+0.615** — the best result in the study is *below* what chance
+  would be expected to produce across the number of things tried
+- fixing one model family for the whole sample **requires knowing in advance which family to
+  fix**; the selection rule chose LightGBM at two of eight reselections and nothing at the other
+  six pointed to it
+- all four family-fixed runs also lose the ability to abstain, so whether the gain comes from the
+  model or from being forced to hold a position more often **is not identified by this design**
+
+**What calibrates the whole table is the seed.** Three runs differing from the confirmatory
+procedure *only* in the random seed give Sharpe ratios of −0.297, −0.141 and −0.175 against its
+−0.144 — a range of **0.156** from changing nothing at all. Eight of the sixteen open-to-close
+specifications differ from it by less than that, which means removing an entire feature group can
+move the result less than reseeding the random number generator does.
+
+Full table and reasoning: [`reports/exploratory_results.md`](reports/exploratory_results.md).
+
+---
+
 ## What is measured before anything is modelled
 
 The benchmark layer runs first, by design: a bar computed after seeing a strategy is a bar you
