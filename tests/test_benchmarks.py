@@ -96,6 +96,18 @@ def test_breakeven_cost_zeroes_the_excess(pieces):
         assert stats["ann_mean_excess"] == pytest.approx(0.0, abs=1e-12)
 
 
+def test_breakeven_accounts_for_financing(pieces, snapshot):
+    """With financing charged, c* must fall: less execution cost can be absorbed."""
+    _, r_o2c, rf = pieces
+    w = pd.Series(1.0, index=r_o2c.index)
+    f = intraday_financing(snapshot, r_o2c.index)
+    c_free = breakeven_cost_o2c(w, r_o2c)
+    c_charged = breakeven_cost_o2c(w, r_o2c, f)
+    assert c_charged < c_free
+    stats = run_o2c(w, r_o2c, rf, c_charged, financing=f)
+    assert stats["ann_mean_excess"] == pytest.approx(0.0, abs=1e-12)
+
+
 # --------------------------------------------------------------- accounting
 
 def test_cash_has_zero_excess_return(pieces):
