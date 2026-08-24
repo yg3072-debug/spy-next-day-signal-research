@@ -20,9 +20,11 @@ on trust.
 > specification order, including the rows that beat the confirmatory result. It cannot
 > change the headline and does not. The alternative-data layer is in
 > [`reports/alternative_data_appendix.md`](reports/alternative_data_appendix.md).
-> `results/experiment_registry.csv` records **43 realised strategy paths across 34
-> specification families**, which is the count any multiple-testing statement here
-> uses.
+> `results/experiment_registry.csv` records **45 realised strategy paths across 35
+> specification families** — 19 retraining specifications, 14 position rules, 10 news
+> arms, the confirmatory run, and one voided run whose result was inspected before it
+> was discarded. That last one is in there because a number that was looked at counts,
+> and leaving it out would quietly shorten the ruler.
 
 ---
 
@@ -94,9 +96,9 @@ procedure's 1.086. It is the best number in the study.
 It is reported, in specification order, alongside every other row, and it is not the finding:
 
 - its Sharpe difference against the confirmatory run is +0.501 with an interval of **[−0.107, +1.138]**
-- it is the maximum of **43 realised strategy paths**, and the expected maximum from pure noise
-  at that count and spread is **+0.615** — the best result in the study is *below* what chance
-  would be expected to produce across the number of things tried
+- it is the maximum of **33 comparable realised strategy paths**, and the expected maximum from
+  pure noise at that count and spread is **+0.615** — the best result in the study is *below*
+  what chance would be expected to produce across the number of things tried
 - fixing one model family for the whole sample **requires knowing in advance which family to
   fix**; the selection rule chose LightGBM at two of eight reselections and nothing at the other
   six pointed to it

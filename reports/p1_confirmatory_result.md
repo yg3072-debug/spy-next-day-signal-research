@@ -303,5 +303,6 @@ including two engineering smoke tests excluded from the trial budget, is recorde
 **One confirmatory trial has been used, and no second confirmatory model was searched after this
 result.** The pre-registered exploratory group has since been run in full and is reported in
 `reports/exploratory_results.md`; it produced rows that beat this one, none of which changes
-anything above. Across everything examined, `results/experiment_registry.csv` records 43 realised
-strategy paths from 34 specification families.
+anything above. Across everything examined, `results/experiment_registry.csv` records 45 realised
+strategy paths from 35 specification families, including one run that was voided after its
+result had been inspected.
