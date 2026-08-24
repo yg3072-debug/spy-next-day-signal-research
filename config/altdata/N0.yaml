@@ -1,0 +1,18 @@
+# N0 - market only, restricted to the news overlap
+#
+# Protocol section 9.1. An overlay on the frozen config/p1.yaml, merged at run
+# time; the frozen file is never edited. Exploratory: this cannot change the P1
+# headline in either direction.
+#
+# The control arm. Same sample, same folds, same cost model as N1, with the
+# news columns absent. Restricting this arm to the overlap too is what makes
+# the comparison an incremental test rather than a window comparison.
+
+meta:
+  id: N0
+  role: exploratory
+
+alt_data:
+  sources: [news]
+  include_columns: false
+  placebo_shift_sessions: 0

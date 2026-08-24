@@ -1,0 +1,19 @@
+# N1m10 - positive control, news shifted -10 sessions
+#
+# Protocol section 9.1. An overlay on the frozen config/p1.yaml, merged at run
+# time; the frozen file is never edited. Exploratory: this cannot change the P1
+# headline in either direction.
+#
+# News from session t+10 attached to session t. This is NOT a placebo: it is
+# a positive control that hands the model information it could not have had. If
+# even this does not improve the result, the pipeline cannot detect text of this
+# kind at all, and the null from the real alignment says less than it appears to.
+
+meta:
+  id: N1m10
+  role: exploratory
+
+alt_data:
+  sources: [news]
+  include_columns: true
+  placebo_shift_sessions: -10
