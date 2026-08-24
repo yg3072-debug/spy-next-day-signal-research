@@ -35,19 +35,36 @@ sys.path.insert(0, str(ROOT))
 
 from src.features import build_features, build_target  # noqa: E402
 from src.pipeline import (  # noqa: E402
-    CLASSES, SigmoidCalibrator, apply_labels, calibration_is_viable,
+    CLASSES, apply_labels, calibration_is_viable, get_calibrator,
     class_conditional_means, crossfit_out_of_fold, estimate_quantiles,
     expected_return, fit_and_predict_proba, make_estimator, select_features,
     vol_adjusted_target,
 )
 from src.stats import TRADING_DAYS, bootstrap_statistic, sharpe  # noqa: E402
 from src.strategy import positions_from_expected_return  # noqa: E402
+from src.execution import get_spec  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_benchmarks import cash_return, intraday_financing, load_snapshot  # noqa: E402
 
 
 # ------------------------------------------------------------------- candidates
+
+def deep_merge(base: dict, over: dict) -> dict:
+    """Overlay wins at the leaves; dictionaries merge, everything else replaces.
+
+    A list replaces rather than extends, so an overlay that narrows a grid narrows
+    it rather than adding to it. That is the behaviour the E-group needs: E5 fixes
+    the model family by supplying one family, not by appending a fifth.
+    """
+    out = dict(base)
+    for key, value in (over or {}).items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = deep_merge(out[key], value)
+        else:
+            out[key] = value
+    return out
+
 
 def build_candidates(cfg: dict) -> list[dict]:
     """Every model configuration, in the order the simplicity key ranks them.
@@ -60,8 +77,15 @@ def build_candidates(cfg: dict) -> list[dict]:
     sensitivity now, not a decision this procedure makes.
     """
     delta = float(cfg["position_rule"]["delta_multiple"])
+    # E5-E8 hold the family fixed for the whole sample. Restricting here rather than
+    # by overriding `models` in the overlay is deliberate: a dict overlay merges, so
+    # supplying one family would silently leave the other four in place.
+    keep = cfg["selection"].get("restrict_to_families")
+    families = {k: v for k, v in cfg["models"].items() if k in keep} if keep         else cfg["models"]
+    if keep and not families:
+        raise KeyError(f"restrict_to_families={keep} matches no family in the grid")
     out = []
-    for family, spec in cfg["models"].items():
+    for family, spec in families.items():
         grid = spec.get("grid")
         combos = (
             [dict(zip(grid, values)) for values in itertools.product(*grid.values())]
@@ -91,12 +115,15 @@ def _predict_only(estimator, X: pd.DataFrame) -> pd.DataFrame:
     return _proba_frame(estimator, X)
 
 
-def net_returns(mu, realised, financing, cost_bps, delta):
-    """Positions from the band, and the net excess return they earn."""
-    c = cost_bps / 1e4
-    w = positions_from_expected_return(mu, cost_bps, financing.loc[mu.index], delta)
-    net = w * realised.loc[mu.index] - 2 * c * w.abs() - financing.loc[mu.index] * w.abs()
-    return w, net
+def net_returns(mu, realised, carry, cost_bps, delta, spec=None):
+    """Positions from the band, and the net excess return they earn.
+
+    `spec` decides both, because the two execution specifications disagree about
+    what a position costs and about what the band has to clear.
+    """
+    spec = spec or get_spec("primary_open_to_close")
+    w = spec.positions(mu, cost_bps, carry, delta)
+    return w, spec.net(w, realised, carry, cost_bps)
 
 
 # ------------------------------------------------------------------- one fold
@@ -141,7 +168,8 @@ def fit_slice(
         viable = calibration_is_viable(
             oof_y, cal_cfg["min_calibration_samples"], cal_cfg["min_samples_per_class"]
         )
-        calibrator = SigmoidCalibrator.fit(oof_proba, oof_y) if viable else None
+        calibrator = get_calibrator(cfg["calibration"]["method"]).fit(oof_proba, oof_y) \
+            if viable else None
 
         estimator = build()
         raw = fit_and_predict_proba(estimator, Xt, y_train, Xp)
@@ -255,16 +283,63 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--smoke", action="store_true", help="structure check on a short window")
     ap.add_argument("--config", default="config/p1.yaml")
+    ap.add_argument("--overlay", default=None,
+                    help="YAML merged over --config; an exploratory specification")
+    ap.add_argument("--outdir", default=None, help="where results go; defaults to results/")
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / args.config).read_bytes())
     config_sha = hashlib.sha256((ROOT / args.config).read_bytes()).hexdigest()
 
+    # An overlay never edits the frozen file. The P1 hash below is still the hash of
+    # config/p1.yaml, and the overlay is recorded beside it with its own digest, so a
+    # reader can tell an exploratory run from the confirmatory one at a glance.
+    overlay_sha = None
+    if args.overlay:
+        raw = (ROOT / args.overlay).read_bytes()
+        overlay_sha = hashlib.sha256(raw).hexdigest()
+        cfg = deep_merge(cfg, yaml.safe_load(raw) or {})
+
+    spec = get_spec(cfg["meta"]["execution_specification"])
     snapshot, manifest = load_snapshot()
+
+    # E20 substitutes the oil factor at the snapshot, so every downstream feature
+    # name is unchanged and the two runs stay comparable. The substitution is not
+    # cosmetic: front-month WTI settled at -$37.63 on 2020-04-20, which makes
+    # log(OIL_t / OIL_{t-k}) undefined for every lag k spanning that date. Those
+    # rows leave the modelling set entirely, and the count is printed rather than
+    # absorbed silently, because the shrunken sample is most of what E20 shows.
+    oil = cfg.get("features", {}).get("oil_series", "OIL")
+    if oil != "OIL":
+        if oil not in snapshot.columns:
+            raise KeyError(f"{oil} is not in the snapshot; have {sorted(snapshot.columns)}")
+        n_nonpositive = int((snapshot[oil] <= 0).sum())
+        snapshot = snapshot.assign(OIL=snapshot[oil])
+        print(f"oil factor      {oil} substituted for Brent"
+              f"  ({n_nonpositive} non-positive settlements)")
+
     features_all, registry = build_features(snapshot)
     groups = {f.name: f.group for f in registry}
-    target_log = np.log1p(build_target(snapshot)).rename("target_log")
-    target_simple = build_target(snapshot)
+
+    # E1-E4 drop a whole hypothesis group before selection ever sees it, which is
+    # not the same as selection happening to leave it out.
+    dropped = set(cfg["feature_selection"].get("exclude_groups") or [])
+    if dropped:
+        keep = [f.name for f in registry if f.group not in dropped]
+        missing = dropped - {f.group for f in registry}
+        if missing:
+            raise KeyError(f"exclude_groups names groups that do not exist: {sorted(missing)}")
+        features_all = features_all[keep]
+        groups = {k: v for k, v in groups.items() if k in set(keep)}
+
+    # The alternative specification generates its signal before the close it trades
+    # at, so every feature carries one more session of lag. Shifting the matrix is
+    # the whole of that change and it must happen before anything is selected.
+    if spec.extra_feature_lag:
+        features_all = features_all.shift(spec.extra_feature_lag)
+
+    target_simple = spec.target(snapshot)
+    target_log = np.log1p(target_simple).rename("target_log")
 
     complete = features_all.dropna().index.intersection(target_simple.dropna().index)
     features_all, target_log = features_all.loc[complete], target_log.loc[complete]
@@ -276,8 +351,7 @@ def main() -> int:
     # A position decided at the close of t is held through session t+1, so it pays
     # that session's financing, not t's. Everything else on the row is already
     # indexed by the decision date.
-    fin = intraday_financing(snapshot, snapshot.index)
-    financing_held = fin.shift(-1).reindex(complete)
+    financing_held = spec.carry(snapshot, complete)
 
     initial = cfg["sample"]["initial_train_sessions"]
     step = cfg["walk_forward"]["outer_step_sessions"]
@@ -293,6 +367,8 @@ def main() -> int:
         outdir = ROOT / "results" / "smoke"
     else:
         outdir = ROOT / "results"
+    if args.outdir:
+        outdir = ROOT / args.outdir
     outdir.mkdir(parents=True, exist_ok=True)
 
     n = len(complete)
@@ -305,6 +381,11 @@ def main() -> int:
     )
 
     print(f"config          {args.config}  {config_sha[:16]}...")
+    if args.overlay:
+        print(f"overlay         {args.overlay}  {overlay_sha[:16]}...")
+    print(f"execution       {spec.name}")
+    if dropped:
+        print(f"excluded groups {sorted(dropped)}  -> {features_all.shape[1]} features remain")
     print(f"modelling set   {n} sessions, {complete.min().date()} to {complete.max().date()}")
     print(f"initial train   {initial}")
     print(f"outer steps     {len(starts)}  (step {step}, retune every {retune_every})")
@@ -317,7 +398,10 @@ def main() -> int:
 
     for step_i, start in enumerate(starts):
         stop = min(start + step, n)
-        train_idx, val_idx = complete[:start], complete[start:stop]
+        lo = 0
+        if cfg["walk_forward"].get("window") == "rolling":
+            lo = max(0, start - int(cfg["walk_forward"]["rolling_sessions"]))
+        train_idx, val_idx = complete[lo:start], complete[start:stop]
         Xtr, Xva = features_all.loc[train_idx], features_all.loc[val_idx]
 
         if step_i % retune_every == 0:
@@ -337,7 +421,7 @@ def main() -> int:
                     inner.setdefault(key, []).append(res["mu_hat"])
                     _, net_in = net_returns(
                         res["mu_hat_train"], target_simple, financing_held,
-                        cost, candidates[0]["delta"],
+                        cost, candidates[0]["delta"], spec,
                     )
                     fold_train.setdefault(key, []).append(sharpe(net_in.to_numpy()))
             concatenated = {k: pd.concat(v) for k, v in inner.items() if v}
@@ -390,8 +474,8 @@ def main() -> int:
             continue
         res = next(iter(fitted["predictions"].values()))
         mu = res["mu_hat"]
-        w = positions_from_expected_return(
-            mu, cfg["costs"]["base_bps_per_side"], financing_held.loc[mu.index], frozen["delta"]
+        w = spec.positions(
+            mu, cfg["costs"]["base_bps_per_side"], financing_held, frozen["delta"]
         )
         for date in mu.index:
             oos_rows.append({
@@ -399,8 +483,9 @@ def main() -> int:
                 "params": frozen["params"], "delta": frozen["delta"],
                 "p_short": res["proba"].loc[date, -1], "p_flat": res["proba"].loc[date, 0],
                 "p_long": res["proba"].loc[date, 1], "mu_hat": mu.loc[date],
-                "position": w.loc[date], "realised_o2c": target_simple.loc[date],
-                "financing": financing_held.loc[date],
+                "position": w.loc[date],
+                spec.return_column: target_simple.loc[date],
+                spec.carry_column: financing_held.loc[date],
                 "calibration_skipped": res["calibration_skipped"],
             })
         for f in fitted["features"]:
@@ -418,8 +503,10 @@ def main() -> int:
         )
 
     (outdir / "run_manifest.json").write_text(json.dumps({
-        "mode": "smoke" if args.smoke else "confirmatory",
+        "mode": "smoke" if args.smoke else ("exploratory" if args.overlay else "confirmatory"),
         "config": args.config, "config_sha256": config_sha,
+        "overlay": args.overlay, "overlay_sha256": overlay_sha,
+        "execution_specification": spec.name,
         "snapshot_sha256": manifest["sha256"],
         "code_commit": subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True

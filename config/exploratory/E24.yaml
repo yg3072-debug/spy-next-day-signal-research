@@ -1,0 +1,18 @@
+# E24 - close-to-close, no borrow charge
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# Sets the short borrow to zero. Isolates how much of the close-to-close
+# result is the 25 bp general-collateral charge rather than the positions.
+
+meta:
+  id: E24
+  role: exploratory
+  execution_specification: alternative_close_to_close
+
+costs:
+  base_bps_per_side: 2.0
+  borrow_annual_bps: 0

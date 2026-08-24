@@ -1,0 +1,20 @@
+# E6 - random_forest only, no family switching
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# P1's selected family changed at almost every reselection, so one reading of
+# the result is that the switching itself is the problem. Holding the family
+# fixed for the whole sample tests that reading. The majority baseline is
+# removed too, so the procedure cannot fall back to predicting the prior: this
+# is what the family does when it is not allowed to abstain.
+
+meta:
+  id: E6
+  role: exploratory
+
+
+selection:
+  restrict_to_families: [random_forest]

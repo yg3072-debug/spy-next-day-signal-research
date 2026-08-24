@@ -1,0 +1,18 @@
+# E20 - WTI in place of Brent
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# Brent is the primary oil factor because front-month WTI settled at -$37.63
+# on 2020-04-20, which makes a log return undefined. WTI is in the snapshot
+# already. This substitution is the reason that choice was made explicit
+# rather than left to whichever series was reached for first.
+
+meta:
+  id: E20
+  role: exploratory
+
+features:
+  oil_series: OIL_WTI

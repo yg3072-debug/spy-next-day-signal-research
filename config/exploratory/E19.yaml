@@ -1,0 +1,18 @@
+# E19 - seed 20260826
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# Identical specification, different random seed. Random forest, LightGBM and
+# XGBoost are all stochastic, and the bootstrap inside the selection rule is
+# seeded too. The spread across these three is the run-to-run noise floor: any
+# exploratory difference smaller than it means nothing.
+
+meta:
+  id: E19
+  role: exploratory
+
+seeds:
+  base: 20260826
