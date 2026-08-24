@@ -67,16 +67,23 @@ def load_snapshot() -> tuple[pd.DataFrame, dict]:
 
 
 def cash_return(frame: pd.DataFrame, column: str = "DGS3MO") -> pd.Series:
-    """Daily cash return, accrued over actual calendar days on a 365-day basis.
+    """Daily cash return, accrued simply over actual calendar days on a 365 basis.
 
-    DGS3MO is a constant-maturity bond-equivalent yield, so it compounds directly.
+    DGS3MO is a constant-maturity coupon-equivalent yield, which for a bill under
+    six months carries no intra-period compounding. It is therefore a *simple*
+    annualised rate, not an effective annual rate, and must not be compounded as
+    one: treating it as an APY understates the cash leg by about 4 bp a year over
+    this sample, which flatters every excess return computed against it.
+
+        rf_t = y_{t-1} / 100 * (calendar days since the previous session) / 365
+
     The one-session shift reflects the H.15 publication lag: the rate dated t is
-    not known until the next business day.
+    not known until the following business day. Calendar-day accrual means a
+    Friday-to-Monday gap earns three days.
     """
     annual = frame[column].shift(1) / 100.0
     days = frame.index.to_series().diff().dt.days
-    rf = (1.0 + annual) ** (days / 365.0) - 1.0
-    return rf.fillna(0.0)
+    return (annual * days / 365.0).fillna(0.0)
 
 
 # ------------------------------------------------------------------- performance
@@ -128,10 +135,26 @@ def breakeven_cost_o2c(weights: pd.Series, r_o2c: pd.Series) -> float:
     return np.nan if exposure == 0 else gross / (2.0 * exposure) * 1e4
 
 
-def run_o2c(weights: pd.Series, r_o2c: pd.Series, rf: pd.Series, cost_bps: float) -> dict:
-    """Intraday specification: full round trip on every active day."""
+def run_o2c(
+    weights: pd.Series, r_o2c: pd.Series, rf: pd.Series, cost_bps: float,
+    charge_intraday_financing: bool = False,
+) -> dict:
+    """Intraday specification: full round trip on every active day.
+
+    Reported quantities are **excess returns on unit notional**: the active
+    trading P&L of the position, stated against cash. The base case charges no
+    intraday financing, which corresponds to a collateralised overlay where bill
+    collateral keeps accruing while the equity exposure is held. The alternative,
+    where deploying cash into SPY forgoes the risk-free rate for the 6.5 hours the
+    position is open, is available here and run as a pre-declared sensitivity: it
+    costs about 0.77% a year at full participation on this sample, roughly
+    0.15 bp per side. It is stated rather than buried because the two assumptions
+    are not equivalent and the difference is not negligible against a 2 bp cost.
+    """
     c = cost_bps / 1e4
     excess = weights * r_o2c - 2.0 * c * weights.abs()
+    if charge_intraday_financing:
+        excess = excess - (6.5 / 24.0) * rf * weights.abs()
     total = rf + excess
     stats = performance(excess, total, weights)
     stats["breakeven_cost_bps_per_side"] = breakeven_cost_o2c(weights, r_o2c)
