@@ -15,3 +15,6 @@ Thumbs.db
 # Local caches and large regenerable intermediates
 data/cache/
 results/**/*.parquet
+
+# Smoke-test artefacts are a plumbing check, not a deliverable.
+results/smoke/
