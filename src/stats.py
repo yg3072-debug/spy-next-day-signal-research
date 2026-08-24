@@ -112,6 +112,46 @@ def bootstrap_difference(
     }
 
 
+def bootstrap_joint(
+    a: pd.Series,
+    b: pd.Series,
+    statistic,
+    block: float = DEFAULT_BLOCK,
+    reps: int = DEFAULT_REPS,
+    alpha: float = 0.05,
+    seed: int = DEFAULT_SEED,
+) -> dict:
+    """Percentile interval for a statistic of two series drawn together.
+
+    For quantities like a regression slope, where the point of the estimate is the
+    relationship between the two series, resampling them independently would
+    destroy the very thing being measured. Both are drawn with the same block
+    indices.
+    """
+    if not a.index.equals(b.index):
+        raise ValueError("both series must share an index for paired resampling")
+    x, y = a.to_numpy(dtype=float), b.to_numpy(dtype=float)
+    point = statistic(x, y)
+    bs = StationaryBootstrap(block, x, y, seed=seed)
+    draws = np.array([statistic(d[0], d[1]) for d, _ in bs.bootstrap(reps)])
+    lo, hi = _ci(draws, alpha)
+    return {
+        "point": float(point),
+        "ci_low": lo,
+        "ci_high": hi,
+        "se": float(np.nanstd(draws, ddof=1)),
+        "fraction_le_zero": float(np.mean(draws <= 0)),
+        "block": float(block),
+        "reps": int(reps),
+    }
+
+
+def ols_slope(x: np.ndarray, y: np.ndarray) -> float:
+    """Slope of y on x. Returns nan when x has no variation to regress on."""
+    vx = x.var(ddof=1)
+    return float(np.cov(x, y, ddof=1)[0, 1] / vx) if vx > 0 else np.nan
+
+
 def jobson_korkie_memmel(strategy: pd.Series, benchmark: pd.Series) -> dict:
     """Parametric test for a difference in Sharpe ratios, as a cross-check.
 

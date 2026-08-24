@@ -49,9 +49,11 @@ excess over always-long, decomposed
 ```
 
 **Every part of the point estimate comes from trading less, and the term that would constitute
-predictive ability is negative.** Two quantities computed without touching the P&L agree — a
-Brier skill of +0.012 against a training-base-rate reference, and a regression slope of realised
-return on predicted return of −0.085. The verdict holds at block lengths 20, 10 and 5.
+predictive ability is negative.** Two quantities computed without touching the P&L show no
+detectable skill in either direction: a Brier skill of +0.012 against a training-base-rate
+reference, and a regression slope of realised on predicted return of −0.085 with an interval of
+[−1.005, +0.891] — a negative point estimate inside an interval far too wide to read as
+anti-prediction. The verdict holds at block lengths 20, 10 and 5.
 
 The protocol fixed the wording for this case before the run. Where a net excess is significant
 but the timing term is not, the available conclusion is that a cost-aware participation filter

@@ -27,7 +27,9 @@ ann_financing_saving,0.003419331227735135
 brier_score,0.6264649948743826
 brier_reference,0.634228854529064
 brier_skill,0.012241416642020053
-mu_hat_slope_on_realised,-0.08503701064307881
-mu_hat_realised_covariance_ci_low,-1.727689789399642e-07
+mu_hat_slope_on_realised,-0.08503701064307875
+mu_hat_slope_ci_low,-1.005450447063323
+mu_hat_slope_ci_high,0.8909442773058048
+mu_hat_slope_bootstrap_fraction_le_zero,0.5802
 steps_with_baseline_selected,3
 verdict,insufficient evidence of a stable incremental value
