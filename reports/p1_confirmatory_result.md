@@ -49,6 +49,12 @@ Same window, same execution specification, same cost model, excess of cash.
 | Cash | 0.00% | +2.89% | 0% | undefined | — | 0% | 0% | — |
 | SPY buy-and-hold | +13.87% | +15.97% | 19.49% | +0.712 | [+0.087, +1.436] | −33.7% | 100% | — |
 
+Always-long open-to-close reads −4.43% here and −4.23% in the benchmark table committed before
+the run. Same rule, same costs; the benchmark table is indexed by the session a position is held
+in and covers 1,866 sessions, while these rows are indexed by the decision date and stop one
+session earlier, the last modelling session having no next session to predict. This table is the
+one to use, because a comparison has to be on identical rows.
+
 Two readings that need no statistics.
 
 **P1 turned one dollar into 1.086 over 7.4 years. Cash turned it into 1.235.** The procedure

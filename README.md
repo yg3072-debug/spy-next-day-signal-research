@@ -72,7 +72,16 @@ can shop for. These are the numbers the strategy will have to clear, committed b
 strategy exists.
 
 Out-of-sample, 1,866 sessions (2019-03-21 to 2026-08-21), 2 bp per side plus financing, excess
-of cash:
+of cash. These were committed before the confirmatory procedure existed and are left as they
+were computed.
+
+One reconciliation, because the same benchmark appears twice in this repository with two
+values. The table below covers 1,866 sessions indexed by the session a position is *held* in.
+The head-to-head comparison in the report covers P1's 1,865 out-of-sample rows, which are
+indexed by the *decision* date and therefore stop one session earlier, since the last modelling
+session has no next session to predict. Always-long open-to-close is −4.23% on the first window
+and −4.43% on the second. Same rule, same costs, windows offset by one session at each end. The
+report uses the second because a comparison has to be on identical rows.
 
 | Benchmark | Annualised excess | Sharpe | 95% interval | Breakeven cost |
 |---|---:|---:|---:|---:|
