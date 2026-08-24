@@ -1,7 +1,12 @@
 [
   {
-    "id": "E24",
+    "id": "E23",
     "status": "ok",
-    "minutes": 20.39
+    "minutes": 21.07
+  },
+  {
+    "id": "E22",
+    "status": "ok",
+    "minutes": 21.09
   }
 ]

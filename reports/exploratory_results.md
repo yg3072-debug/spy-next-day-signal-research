@@ -89,13 +89,16 @@ Presenting it as the finding would require ignoring all of the following.
 **Its interval spans zero.** The Sharpe difference against P1 is +0.501 with a
 paired interval of [−0.107, +1.138].
 
-**It is the maximum of 43 realised strategy paths.** Protocol §6.4's descriptive
-reference asks what the best Sharpe would be among that many draws of pure noise
-with the observed spread:
+**It is the maximum of 33 comparable realised strategy paths** — the 19 retraining
+specifications and the 14 position rules, all scored on the same 1,865 sessions.
+The 10 news arms are counted in the registry but left out of this spread, because
+they run on a 1,247-session overlap and pooling two windows would compare unlike
+quantities. Protocol §6.4's descriptive reference asks what the best Sharpe would be
+among that many draws of pure noise with the observed spread:
 
 | | |
 |---|---:|
-| Realised strategy paths examined | **43** |
+| Comparable realised strategy paths | **33** |
 | Spread of their Sharpe ratios (sd) | 0.291 |
 | **Best observed** | **+0.357** |
 | **Expected maximum from noise alone at N = 43** | **+0.615** |
@@ -151,6 +154,10 @@ All three are negative. The specification trades on 98.4% of sessions at 2 bp,
 because a position that persists is not re-paid for and the one-step rule holds
 rather than exits: it is a nearly-always-invested overnight strategy, not a
 selective one.
+
+The registry carries **45 realised strategy paths across 35 families**, one of which
+is a voided run — see below — recorded because its result was inspected before it was
+discarded, and a number that was looked at counts.
 
 **E24 is the reason this section needed rerunning.** It sets the borrow charge to
 zero to isolate how much of the result is the general-collateral cost. Its first
