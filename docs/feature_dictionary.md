@@ -4,7 +4,7 @@ Generated from the metadata registry in `src/features.py` by `python scripts/bui
 
 Every feature is a function of information available at or before the close of session *t*. The target is the next session's open-to-close simple return, `Close_{t+1} / Open_{t+1} - 1`.
 
-**Snapshot:** `market_inputs_2026-08-21.csv` · **SHA-256:** `103a837de14b5226283c2b13f6ff0781def29565eec9f9d4ae8fc23510ffa507`
+**Snapshot:** `market_inputs_2026-08-21.csv` · **SHA-256:** `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a`
 **Candidates:** 81 across 13 hypothesis groups · **Sessions:** 2,926
 
 `Adj-inv` marks a feature that is unchanged when the whole price history is rescaled by a constant, which is what a dividend revision does. `Lag` is any publication delay beyond the session close, in sessions. Coverage is the share of sessions with a value once the warm-up window has passed.

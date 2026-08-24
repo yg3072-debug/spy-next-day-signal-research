@@ -1,0 +1,27 @@
+config          config/p1.yaml  c219757bb47c087e...
+overlay         config/exploratory/E5.yaml  38a5ef78e0afd8a9...
+execution       primary_open_to_close
+modelling set   2865 sessions, 2015-03-31 to 2026-08-20
+initial train   1000
+outer steps     89  (step 21, retune every 12)
+candidates      6  over 6 fitted models
+
+  step   0  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/6
+  step  12  retune  chose logistic|{'C': 0.01, 'class_weight': 'balanced'}   eligible 5/6
+  step  24  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/6
+  step  36  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/6
+  step  48  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/6
+  step  60  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 5/6
+  step  72  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/6
+  step  84  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 6/6
+
+run complete in 124.5s
+  oos_predictions.csv   1865 rows x 12 cols
+    columns             ['step', 'model', 'params', 'delta', 'p_short', 'p_flat', 'p_long', 'mu_hat', 'position', 'realised_o2c', 'financing', 'calibration_skipped']
+    dates               2019-03-21 to 2026-08-20
+    positions           {-1.0: np.int64(203), 0.0: np.int64(1055), 1.0: np.int64(607)}
+    calibration skipped 0 rows
+  selection_log.csv     8 retunes
+  candidate_diagnostics 48 rows (8 retunes x 6 candidates)
+  feature_stability.csv 45 distinct features selected
+  run_manifest.json     written
