@@ -1,0 +1,9 @@
+step,date,chosen_id,chosen_score,baseline_selected,n_candidates,reason,best_id,best_score,se_best,n_eligible,n_degenerate
+0,2019-03-20,majority_baseline|{},-0.8903426762562632,True,23,one-standard-error rule,"logistic|{'C': 0.1, 'class_weight': 'balanced'}",-0.8244112263779958,0.6878726513239174,22,0
+12,2020-03-19,majority_baseline|{},-0.19383152974719284,True,23,one-standard-error rule,"logistic|{'C': 0.1, 'class_weight': None}",-0.11516113794250064,0.5733833790622479,6,0
+24,2021-03-19,"logistic|{'C': 1.0, 'class_weight': None}",0.0021824212528556816,False,23,one-standard-error rule,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.1, 'min_child_samples': 30}",0.5881985388847739,0.6261688972101206,14,0
+36,2022-03-18,"logistic|{'C': 0.01, 'class_weight': None}",-0.1711102529312527,False,23,one-standard-error rule,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",0.3811941597136687,0.7046534413001484,19,0
+48,2023-03-21,"logistic|{'C': 0.01, 'class_weight': None}",-0.4519367468343496,False,23,one-standard-error rule,"xgboost|{'max_depth': 3, 'learning_rate': 0.1}",0.11885660397352822,0.8600536307617317,7,1
+60,2024-03-21,"logistic|{'C': 0.01, 'class_weight': None}",-0.8485517628136184,False,23,one-standard-error rule,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}",-0.6525426639472851,0.6246203846545679,13,1
+72,2025-03-25,majority_baseline|{},-0.4932707863513189,True,23,one-standard-error rule,majority_baseline|{},-0.4932707863513189,0.5711483964816886,17,0
+84,2026-03-26,majority_baseline|{},-0.3157952488129069,True,23,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",-0.12638491231489224,0.6857200521899369,16,0

@@ -1,7 +1,14 @@
 [
   {
+    "id": "E3",
+    "status": "skipped"
+  },
+  {
+    "id": "E2",
+    "status": "skipped"
+  },
+  {
     "id": "E1",
-    "status": "ok",
-    "minutes": 19.81
+    "status": "skipped"
   }
 ]
