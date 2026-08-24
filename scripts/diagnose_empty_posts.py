@@ -143,12 +143,13 @@ def main() -> int:
         share = has_body.mean()
         se = (share * (1 - share) / n) ** 0.5
         print(f"\nSAMPLE — rows the old extractor returned nothing for  (n = {n})")
-        print(f"  body element present on the page:   {sample.body_element_present.mean():.1%}")
-        print(f"  body element is genuinely EMPTY:    {1 - share:.1%}"
-              f"   <- a real text-free post")
-        print(f"  body element has text the old       {share:.1%} +/- {1.96 * se:.1%}"
-              f"   <- an extraction miss")
-        print(f"    extractor missed")
+        # A page either has no body element at all or has an empty one; both mean
+        # the post carried no typed text, so they are reported as one number.
+        print(f"  carries typed text the old extractor missed: {share:.1%}"
+              f" +/- {1.96 * se:.1%}")
+        print(f"  genuinely text-free:                        {1 - share:.1%}")
+        print(f"    (body element absent on {1 - sample.body_element_present.mean():.1%},"
+              f" present but empty on {sample.body_element_present.mean():.1%})")
         print(f"\n  attachment kinds among them: "
               f"{sample.attachment_kinds.replace('', 'none').value_counts().head(5).to_dict()}")
         print(f"  carry a link-card title:     {(sample.card_title.fillna('').str.len() > 0).mean():.1%}")

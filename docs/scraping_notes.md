@@ -90,32 +90,61 @@ is a false positive.
 
 ### Empty text: what it is, and what cannot be determined
 
-3,749 rows (26.5%) carry an empty `text` field. **An earlier version of this
-document claimed these are cleanly separated from scrape failures. That claim was
-wrong and is withdrawn.**
+3,749 rows (26.5%) carry an empty `text` field. The collector cannot tell you why,
+and this section originally asserted an answer it had no grounds for. The claim was
+withdrawn, then established by measurement. Both steps are recorded because the
+order matters: the assertion was not acceptable merely because it turned out to be
+right.
 
-Here is what the pipeline actually does. `parse_post_page` extracts the post body
-by matching three regular expressions against the flattened page text, then
-rejects three boilerplate patterns. If no pattern matches, or the match is
-boilerplate, it sets `text_raw = None`. So an empty `text` means *the extractor
-returned nothing*, which has two possible causes that the archive CSV cannot tell
-apart:
+**Why the archive alone cannot answer it.** `parse_post_page` extracts the post
+body by matching three regular expressions against the flattened page text and
+rejecting three boilerplate patterns. If nothing matches it writes
+`text_raw = None`. An empty field therefore means *the extractor returned
+nothing*, which is either a genuinely text-free post or an extraction miss, and no
+column in the CSV separates them.
 
-- the post genuinely carried no text — an image, or a repost with no comment
-- the post had text and the extractor missed it
+**What the archive does establish**: all 3,749 empty rows carry a status id, an
+archive URL, an original Truth Social URL and a parsed timestamp. The page was
+fetched and parsed, so none of them is a network failure.
 
-What can be established: **all 3,749 empty rows have a status id, an archive URL,
-an original Truth Social URL and a parsed timestamp.** The page was fetched and
-parsed; only the body came back empty. So these are not network failures, and a
-network failure produces no row at all. That is a narrower statement than the one
-withdrawn above, and it is the one the data supports.
+**The measurement.** `scripts/diagnose_empty_posts.py` re-fetches a sample and
+reads `div.status__content` — the element that holds the post body — instead of
+matching patterns against flattened text. 200 pages at one request per second,
+197 fetched.
 
-**26.5% is therefore an upper bound on "posts with no text", containing an unknown
-number of extraction misses.** Resolving it would need a re-scrape with an
-extractor that distinguishes an absent body from an unmatched pattern — for
-instance by locating the post container in the DOM rather than by regex over
-flattened text. Whether that is worth doing is discussed in the appendix; it does
-not affect any conclusion, because §9.2 commits to no trading test on this source.
+*The control comes first.* 49 rows the old extractor did find text for were
+sampled alongside. The structural extractor finds a body in **100% of them**. An
+extractor that disagreed with the old one where the old one succeeded would be
+measuring itself rather than the archive.
+
+Of 148 empty rows:
+
+| | |
+|---|---:|
+| Body element carries text the old extractor missed | **0.0%** |
+| Genuinely text-free | **100.0%** |
+| Carry an image attachment | 96 |
+| Carry a video attachment | 50 |
+| Carry neither | 2 |
+
+**Not one extraction miss in 148.** The 26.5% figure is what it appears to be: the
+share of posts that carried no typed text. `truth_empty_post_count` counts exactly
+what it claims to.
+
+**The measurement also found something the study is not using.** 92.6% of those
+text-free posts carry a **video transcript** — text the archive generates for video
+attachments, sitting in `div.status-details-attachment__text`, which the original
+collector never extracted and no feature here touches. Roughly 3,470 posts'
+spoken content is absent from this study. A further 1.4% carry a link-preview
+title.
+
+That is a real gap and it is left open deliberately. Adding transcripts now, after
+seeing that the news layer produced nothing, would be a new specification chosen
+in response to a null result — the exact move §7.2 exists to prevent. It is
+recorded here as a pre-registrable direction for a future round, with the
+observation that a transcript is spoken rather than typed content and machine-
+produced rather than authored, so it would need its own justification and not
+simply be concatenated onto the post body.
 
 Empty rows are excluded from the token and sentiment aggregates and carried as
 `truth_empty_post_count`. Scoring them instead would be quietly destructive: an
