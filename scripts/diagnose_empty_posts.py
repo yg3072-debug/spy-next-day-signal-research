@@ -57,6 +57,9 @@ def extract(html: str) -> dict:
     archive generates for video attachments. The old extractor could see none of
     them, and they are recorded separately rather than merged into the body, since
     a transcript is not something the author wrote.
+
+    Only lengths are returned. Whether a body exists is answerable from a count, and
+    keeping the words would redistribute content this project has decided not to.
     """
     soup = BeautifulSoup(html, "lxml")
 
@@ -72,13 +75,17 @@ def extract(html: str) -> dict:
             kinds += [c.split("--", 1)[1] for c in el.get("class", [])
                       if "status-attachment--" in c]
 
+    # Lengths, not words. The question is whether a body exists, and the answer is
+    # a count; retaining the text would redistribute third-party content that the
+    # rest of this project deliberately does not commit, for no analytical gain.
+    body = content_el.get_text(" ", strip=True) if content_el else ""
     return {
         "body_element_present": content_el is not None,
-        "body": content_el.get_text(" ", strip=True) if content_el else "",
+        "body_chars": len(body.strip()),
         "attachment_kinds": ",".join(sorted(set(kinds))),
-        "card_title": text_of("div.status-card__title"),
-        "card_description": text_of("div.status-card__description"),
-        "video_transcript": text_of("div.status-details-attachment__text"),
+        "card_title_chars": len(text_of("div.status-card__title").strip()),
+        "card_description_chars": len(text_of("div.status-card__description").strip()),
+        "video_transcript_chars": len(text_of("div.status-details-attachment__text").strip()),
         "is_repost": bool(soup.select_one("div.status__body div.status-info")),
     }
 
@@ -133,7 +140,7 @@ def main() -> int:
 
     control = ok[~ok.was_empty_in_snapshot]
     if len(control):
-        agree = (control.body.fillna("").str.len() > 0).mean()
+        agree = (control.body_chars > 0).mean()
         print("CONTROL — rows the old extractor did find text for")
         print(f"  the structural extractor also finds a body: {agree:.1%} of {len(control)}")
         if agree < 0.95:
@@ -141,7 +148,7 @@ def main() -> int:
 
     sample = ok[ok.was_empty_in_snapshot]
     if len(sample):
-        has_body = sample.body.fillna("").str.len() > 0
+        has_body = sample.body_chars > 0
         n = len(sample)
         share = has_body.mean()
         se = (share * (1 - share) / n) ** 0.5
@@ -155,9 +162,9 @@ def main() -> int:
               f" present but empty on {sample.body_element_present.mean():.1%})")
         print(f"\n  attachment kinds among them: "
               f"{sample.attachment_kinds.replace('', 'none').value_counts().head(5).to_dict()}")
-        print(f"  carry a link-card title:     {(sample.card_title.fillna('').str.len() > 0).mean():.1%}")
+        print(f"  carry a link-card title:     {(sample.card_title_chars > 0).mean():.1%}")
         print(f"  carry a video transcript:    "
-              f"{(sample.video_transcript.fillna('').str.len() > 0).mean():.1%}")
+              f"{(sample.video_transcript_chars > 0).mean():.1%}")
 
         total_empty = int(is_empty.sum())
         print(f"\n  Scaled to all {total_empty:,} empty rows: roughly "

@@ -90,3 +90,23 @@ def test_the_scraper_takes_its_contact_from_the_environment():
     source = (ROOT / "scripts" / "diagnose_empty_posts.py").read_text(encoding="utf-8")
     assert "SCRAPER_CONTACT" in source
     assert not EMAIL.search(source), "the scraper has a hard-coded address again"
+
+
+def test_no_tracked_file_redistributes_scraped_document_text(corpus):
+    """The diagnostic sample must store lengths, not words.
+
+    `results/empty_post_diagnosis.csv` originally kept the post bodies and video
+    transcripts it fetched -- 49 bodies and 151 transcripts, up to 4,101 characters
+    -- which redistributes exactly the third-party content the rest of this project
+    withholds. Whether a body exists is answerable from a count, so the words were
+    never needed.
+    """
+    path = ROOT / "results" / "empty_post_diagnosis.csv"
+    if not path.exists():
+        pytest.skip("no diagnostic sample present")
+    header = path.read_text(encoding="utf-8").splitlines()[0].split(",")
+    for column in ("body", "card_title", "card_description", "video_transcript"):
+        assert column not in header, (
+            f"{column} holds fetched text; store {column}_chars instead"
+        )
+    assert "body_chars" in header
