@@ -95,7 +95,58 @@ def main() -> int:
                     help="record the v5 engineering smoke run")
     ap.add_argument("--register-position-rules", action="store_true",
                     help="one row per realised path in exploratory_position_rules.csv")
+    ap.add_argument("--register-runs", action="store_true",
+                    help="one row per completed run under results/exploratory and results/altdata")
     args = ap.parse_args()
+
+    if args.register_runs:
+        import pandas as pd
+        n = 0
+        for base, kind in ((ROOT / "results" / "exploratory", "exploratory"),
+                           (ROOT / "results" / "altdata", "exploratory")):
+            if not base.exists():
+                continue
+            for d in sorted(base.iterdir()):
+                manifest_path = d / "run_manifest.json"
+                if not manifest_path.is_dir() and manifest_path.exists():
+                    m = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    overlay = (m.get("overlay") or "")
+                    # C2C inherits its position rule from an addendum written after
+                    # P1, so it cannot claim the stronger pre-registration.
+                    c2c = m.get("execution_specification") == "alternative_close_to_close"
+                    append({
+                        "run_id": d.name,
+                        "subrun_id": d.name,
+                        "family_id": d.name,
+                        "date": date.today().isoformat(),
+                        "run_type": kind,
+                        "excluded_from_trial_budget": "false",
+                        "performance_metrics_computed": "true",
+                        "protocol_version": "v6 + c2c addendum" if c2c else "v6",
+                        "config_sha256": m.get("config_sha256", ""),
+                        "snapshot_sha256": m.get("snapshot_sha256", ""),
+                        "code_commit": m.get("code_commit", ""),
+                        "n_candidates": "",
+                        "delta_multiple": "0.0 fixed",
+                        "training_window": overlay,
+                        "outer_steps": m.get("outer_steps", ""),
+                        "oos_sessions": m.get("oos_sessions", ""),
+                        "specified_before_p1": "false" if c2c else "true",
+                        "specified_before_own_results": "true",
+                        "cannot_modify_p1_headline": "true",
+                        "notes": (
+                            f"Overlay {overlay} merged over the frozen config/p1.yaml, which is "
+                            f"unedited. Execution specification "
+                            f"{m.get('execution_specification', 'primary_open_to_close')}, "
+                            f"parameters {m.get('execution_parameters') or {}}. "
+                            + ("Position rule from docs/c2c_exploratory_addendum.md, fixed "
+                               "after P1 and before any close-to-close return was computed."
+                               if c2c else "")
+                        ),
+                    })
+                    n += 1
+        print(f"registered {n} completed runs")
+        return 0
 
     if args.register_position_rules:
         import pandas as pd
