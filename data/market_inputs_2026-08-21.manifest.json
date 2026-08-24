@@ -1,7 +1,7 @@
 {
   "snapshot_file": "market_inputs_2026-08-21.csv",
-  "sha256": "103a837de14b5226283c2b13f6ff0781def29565eec9f9d4ae8fc23510ffa507",
-  "frozen_at_utc": "2026-08-23T23:09:15.150216+00:00",
+  "sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
+  "frozen_at_utc": "2026-08-24T00:58:38.077948+00:00",
   "requested_window": {
     "start_inclusive": "2015-01-01",
     "end": "2026-08-21"
@@ -28,6 +28,7 @@
     "DTB3",
     "DGS2",
     "DGS10",
+    "session_minutes",
     "is_half_day"
   ],
   "calendar": "NYSE via pandas_market_calendars",

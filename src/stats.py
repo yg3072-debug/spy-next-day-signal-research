@@ -20,7 +20,10 @@ import pandas as pd
 from arch.bootstrap import StationaryBootstrap, optimal_block_length
 
 TRADING_DAYS = 252
-DEFAULT_BLOCK = 10
+# Main block length, fixed before P1 runs. Politis-White on the pre-computed
+# always-long O2C benchmark suggests 17.0; 20 is that rounded up. Sensitivity
+# runs use 10, with 5 as a short-block stress test.
+DEFAULT_BLOCK = 20
 DEFAULT_REPS = 10_000
 DEFAULT_SEED = 20260823
 
@@ -103,7 +106,7 @@ def bootstrap_difference(
         "ci_low": lo,
         "ci_high": hi,
         "se": float(np.nanstd(draws, ddof=1)),
-        "p_le_zero": float(np.mean(draws <= 0)),
+        "fraction_le_zero": float(np.mean(draws <= 0)),
         "block": float(block),
         "reps": int(reps),
     }

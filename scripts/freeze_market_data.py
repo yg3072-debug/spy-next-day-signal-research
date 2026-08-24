@@ -80,13 +80,22 @@ def sha256_of(path: Path) -> str:
 
 
 def nyse_sessions(start: str, end: str) -> pd.DataFrame:
-    """Return one row per NYSE session with an early-close flag."""
+    """One row per NYSE session, with its length and an early-close flag.
+
+    Session length is carried explicitly because an early close is a real trading
+    state, not a data defect: the same round-trip cost has to be recovered over a
+    shorter session. Returns are never rescaled by it.
+    """
     cal = mcal.get_calendar("NYSE")
     sched = cal.schedule(start_date=start, end_date=end)
+    open_et = sched["market_open"].dt.tz_convert("America/New_York")
     close_et = sched["market_close"].dt.tz_convert("America/New_York")
+    minutes = ((close_et - open_et).dt.total_seconds() / 60).to_numpy()
     sessions = pd.DatetimeIndex(sched.index).tz_localize(None).normalize()
-    is_half = (close_et.dt.hour < 15).to_numpy()
-    return pd.DataFrame({"is_half_day": is_half.astype(int)}, index=sessions)
+    return pd.DataFrame(
+        {"session_minutes": minutes.astype(int), "is_half_day": (minutes < 360).astype(int)},
+        index=sessions,
+    )
 
 
 def fetch_yahoo(ticker: str, start: str, end: str) -> pd.DataFrame:
@@ -157,6 +166,7 @@ def build_snapshot(start: str, end: str) -> tuple[pd.DataFrame, dict]:
             "unresolved": int(filled.isna().sum()),
         }
 
+    out["session_minutes"] = spine["session_minutes"]
     out["is_half_day"] = spine["is_half_day"]
 
     # Leading rows can still be NaN where a series starts after START_DATE or a

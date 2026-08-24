@@ -149,8 +149,37 @@ def test_cash_uses_the_lagged_publication():
     assert rf.iloc[2] == pytest.approx(0.0, abs=1e-15), "rate dated t must not accrue on t"
     assert rf.iloc[3] > 0, "rate dated t must accrue on t+1"
     assert rf.iloc[4] == pytest.approx(0.0, abs=1e-15), "and only on t+1"
-    # One calendar day of a 3.65% bond-equivalent yield.
-    assert rf.iloc[3] == pytest.approx((1.0365) ** (1 / 365) - 1, rel=1e-12)
+    # One calendar day of a 3.65% simple annualised yield: 0.0365 / 365 = 1 bp.
+    assert rf.iloc[3] == pytest.approx(0.0365 / 365, rel=1e-12)
+
+
+def test_cash_is_accrued_simply_not_as_an_effective_annual_rate():
+    """DGS3MO is a coupon-equivalent yield on a sub-six-month bill, so it carries
+    no intra-period compounding and must not be treated as an APY.
+
+    Compounding it as `(1+y)^(d/365)-1` understates the cash leg, which in turn
+    inflates every excess return measured against it.
+    """
+    idx = pd.bdate_range("2020-01-06", periods=3)
+    rates = pd.Series(5.0, index=idx)
+    rf = cash_return(pd.DataFrame({"DGS3MO": rates}))
+    simple = 0.05 / 365
+    compounded = 1.05 ** (1 / 365) - 1
+    assert rf.iloc[2] == pytest.approx(simple, rel=1e-12)
+    assert rf.iloc[2] > compounded, "simple accrual must exceed the compounded reading"
+
+
+def test_intraday_financing_is_a_declared_charge_not_a_default(pieces):
+    """The base case assumes collateral keeps accruing; the alternative charges
+    the risk-free rate for the hours the position is open. Both must be available
+    and the difference must be material enough to declare."""
+    _, r_o2c, rf = pieces
+    long_only = pd.Series(1.0, index=r_o2c.index)
+    free = run_o2c(long_only, r_o2c, rf, 2.0)["ann_mean_excess"]
+    charged = run_o2c(long_only, r_o2c, rf, 2.0, charge_intraday_financing=True)["ann_mean_excess"]
+    drag = free - charged
+    assert drag == pytest.approx((6.5 / 24) * rf.mean() * TRADING_DAYS, rel=1e-12)
+    assert drag > 2e-4, "the charge is large enough that leaving it implicit would be sloppy"
 
 
 # ------------------------------------------------------------------ invariance
