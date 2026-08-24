@@ -1031,6 +1031,33 @@ count — makes the freeze harder to check rather than easier. The state at free
 hash, so the two states remain distinguishable. Both smoke runs are in
 `results/experiment_registry.csv` as `SMOKE-01` and `SMOKE-02`.
 
+**Erratum, 2026-08-24, on §9.3's pre-open figure.** §9.3 states that not using the pre-open
+window "forgoes about 18.7% of posts being tradable one session earlier". That percentage is
+reproducible, but it measures a **proxy** — posts timestamped before 09:30 ET on any calendar
+day, 2,652 of 14,145 — rather than the claim it is attached to.
+
+The claim covers any post a morning pipeline could act on one session earlier, and under the
+§9.3 mapping that includes far more than the early-morning ones. A post at 18:00 on Monday falls
+in Tuesday's close batch, so it is combined with Tuesday's market features and acted on at
+**Wednesday's** open; a morning pipeline would have acted on it at Tuesday's open. Evening posts
+are the bulk of this feed, so they dominate the count. Measured as "published before the open of
+the session it is assigned to", the correct figure is **10,520 of 14,145, or 74.4%**.
+
+**No result changes.** §9.2 commits in advance to running no trading test on this source, so the
+figure is a disclosure of what the design choice costs, not an input to anything. The choice
+itself stands unaltered: keeping the alternative data on the same end-of-day information set as
+the market variables is what makes the two comparable. What was wrong was the size of the
+concession, understated by roughly a factor of four. Both numbers are emitted by
+`scripts/freeze_alt_data.py` into the data manifest, so the discrepancy is traceable rather than
+mysterious.
+
+**Reconciliation, same date, on the Truth Social session count.** §9's table gives 446 sessions
+of overlap; `freeze_alt_data.py` reports 443. Both are correct and they count different things.
+446 modelling sessions fall inside the archive's span of 2024-07-15 to 2026-04-23, and **3 of
+them received no post at all**. 446 is the right figure for sizing the sample, because a session
+with no posts still carries a zero-count feature row; 443 is the number of sessions with
+content. Both are recorded in the manifest.
+
 ---
 
 ## Appendix C · Execution order after the freeze
