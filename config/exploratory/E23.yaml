@@ -1,0 +1,18 @@
+# E23 - close-to-close, 5 bp per side
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# The close-to-close specification trades far less often, so it should be much
+# less cost-sensitive than the primary one. This is where that shows up or
+# fails to.
+
+meta:
+  id: E23
+  role: exploratory
+  execution_specification: alternative_close_to_close
+
+costs:
+  base_bps_per_side: 5.0

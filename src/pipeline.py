@@ -225,6 +225,53 @@ class SigmoidCalibrator:
         return out.div(total, axis=0).fillna(1.0 / len(CLASSES))
 
 
+@dataclass
+class IsotonicCalibrator:
+    """One-vs-rest isotonic regression, then renormalise. E16 only.
+
+    Retained as the pre-registered alternative to Platt scaling, and expected to be
+    worse here rather than better: with three classes over a 500-session inner
+    out-of-sample split three ways for the cross-fit, isotonic sees on the order of
+    a hundred points per class, well inside the range where a free-form monotone
+    fit reproduces its own calibration set. Sigmoid spends two parameters per class
+    instead. Running it is how that claim gets a number attached.
+    """
+
+    models: dict = field(default_factory=dict)
+
+    @classmethod
+    def fit(cls, proba: pd.DataFrame, y: pd.Series) -> "IsotonicCalibrator":
+        from sklearn.isotonic import IsotonicRegression
+        models = {}
+        for cls_value in CLASSES:
+            target = (np.asarray(y) == cls_value).astype(int)
+            if target.sum() == 0 or target.sum() == len(target):
+                continue
+            iso = IsotonicRegression(y_min=0.0, y_max=1.0, out_of_bounds="clip")
+            models[cls_value] = iso.fit(proba[cls_value].to_numpy(), target)
+        return cls(models=models)
+
+    def transform(self, proba: pd.DataFrame) -> pd.DataFrame:
+        if not self.models:
+            return proba
+        out = pd.DataFrame(index=proba.index, columns=CLASSES, dtype=float)
+        for cls_value in CLASSES:
+            p = proba[cls_value].to_numpy()
+            out[cls_value] = self.models[cls_value].predict(p) \
+                if cls_value in self.models else p
+        total = out.sum(axis=1).replace(0.0, np.nan)
+        return out.div(total, axis=0).fillna(1.0 / len(CLASSES))
+
+
+CALIBRATORS = {"sigmoid": SigmoidCalibrator, "isotonic": IsotonicCalibrator}
+
+
+def get_calibrator(method: str):
+    if method not in CALIBRATORS:
+        raise KeyError(f"unknown calibration method {method!r}; have {sorted(CALIBRATORS)}")
+    return CALIBRATORS[method]
+
+
 def crossfit_out_of_fold(
     X: pd.DataFrame,
     y: pd.Series,

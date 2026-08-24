@@ -1,0 +1,18 @@
+# E15 - quarterly refit instead of monthly
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# P1 refits every 21 sessions. At 63 the pipeline is up to three months stale
+# when it trades, which is the cost of the same models being fitted a third as
+# often. Worth knowing whether monthly refitting was earning anything.
+
+meta:
+  id: E15
+  role: exploratory
+
+walk_forward:
+  outer_step_sessions: 63
+  retune_every_outer_steps: 4

@@ -1,0 +1,19 @@
+# E22 - close-to-close execution
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# A different strategy, not a robustness check: different target, different
+# holding period, overnight exposure, a different cost function, and one more
+# session of feature lag. Protocol 2.2 assigns it to the exploratory group for
+# exactly that reason, and states that even a clear win here cannot rescue P1.
+
+meta:
+  id: E22
+  role: exploratory
+  execution_specification: alternative_close_to_close
+
+costs:
+  base_bps_per_side: 2.0

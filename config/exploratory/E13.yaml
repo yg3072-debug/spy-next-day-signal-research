@@ -1,0 +1,19 @@
+# E13 - rolling 1000-session window
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# P1's training window expands, so the 2026 model still sees 2015. A rolling
+# window discards the distant past instead. If the relationship is unstable,
+# the rolling window should do better; if the sample is simply too small,
+# worse.
+
+meta:
+  id: E13
+  role: exploratory
+
+walk_forward:
+  window: rolling
+  rolling_sessions: 1000
