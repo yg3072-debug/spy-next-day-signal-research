@@ -13,6 +13,7 @@ and a test pins the two implementations against each other on P1's own output.
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 
 import numpy as np
@@ -166,12 +167,34 @@ class CloseToClose:
 
 
 SPECS = {
-    "primary_open_to_close": OpenToClose(),
-    "alternative_close_to_close": CloseToClose(),
+    "primary_open_to_close": OpenToClose,
+    "alternative_close_to_close": CloseToClose,
 }
 
 
-def get_spec(name: str):
+def get_spec(name: str, **overrides):
+    """Build the specification, applying any configured parameters.
+
+    This returns a fresh instance rather than a shared one, and it is the second
+    version of this function. The first returned module-level singletons built with
+    their defaults, so a configuration that set `borrow_annual_bps: 0` was accepted,
+    recorded in the manifest, and silently ignored -- E24 ran with the 25 bp charge
+    it existed to remove, and its output was bit-identical to E22.
+
+    Nothing about that failure was visible from the run: the overlay was valid, the
+    hash was right, the run succeeded. It was caught because two specifications that
+    should differ produced identical numbers. Unknown keys now raise, so a
+    misspelled parameter fails loudly instead of being dropped.
+    """
     if name not in SPECS:
         raise KeyError(f"unknown execution specification {name!r}; have {sorted(SPECS)}")
-    return SPECS[name]
+    cls = SPECS[name]
+    fields = {f.name for f in dataclasses.fields(cls)}
+    unknown = set(overrides) - fields
+    if unknown:
+        raise KeyError(
+            f"{name} takes no parameter(s) {sorted(unknown)}; it has {sorted(fields)}. "
+            "Silently dropping them is how E24 came to run with the borrow charge it "
+            "was supposed to remove."
+        )
+    return cls(**overrides)

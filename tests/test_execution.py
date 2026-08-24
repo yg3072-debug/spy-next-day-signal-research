@@ -209,3 +209,35 @@ def test_o2c_object_reproduces_the_committed_run_exactly():
     net = spec.net(w, oos.realised_o2c, fin, 2.0)
     direct = oos.position * oos.realised_o2c - 4e-4 * oos.position.abs() - fin * oos.position.abs()
     assert (net - direct).abs().max() < 1e-15
+
+
+def test_get_spec_applies_configured_parameters():
+    """The regression that produced E24.
+
+    get_spec used to return module-level singletons built with their defaults, so a
+    configuration setting borrow_annual_bps to 0 was accepted, written into the run
+    manifest, and ignored. E24 ran with the 25 bp charge it existed to remove and
+    came out bit-identical to E22.
+    """
+    default = get_spec("alternative_close_to_close")
+    assert default.borrow_annual_bps == 25.0
+    free = get_spec("alternative_close_to_close", borrow_annual_bps=0.0)
+    assert free.borrow_annual_bps == 0.0
+    assert default.borrow_annual_bps == 25.0, "overrides must not mutate a shared object"
+
+    # And it must actually change the P&L, not merely the attribute.
+    idx = _dates(2)
+    w = pd.Series([-1.0, 0.0], index=idx)
+    r = pd.Series([0.0, 0.0], index=idx)
+    carry = pd.Series(0.0, index=idx)
+    days = pd.Series([3.0, 1.0], index=idx)
+    assert free.net(w, r, carry, 0.0, days).iloc[0] == 0.0
+    assert default.net(w, r, carry, 0.0, days).iloc[0] < 0.0
+
+
+def test_get_spec_rejects_a_parameter_it_does_not_have():
+    """A misspelled parameter must fail loudly rather than be dropped."""
+    with pytest.raises(KeyError, match="takes no parameter"):
+        get_spec("alternative_close_to_close", borrow_bps=0.0)
+    with pytest.raises(KeyError, match="takes no parameter"):
+        get_spec("primary_open_to_close", borrow_annual_bps=0.0)

@@ -1,0 +1,9 @@
+step,date,chosen_id,chosen_score,baseline_selected,n_candidates,reason,best_id,best_score,se_best,n_eligible,n_degenerate
+0,2019-03-20,majority_baseline|{},-0.8903426762562632,True,23,one-standard-error rule,"lightgbm|{'num_leaves': 15, 'learning_rate': 0.03, 'min_child_samples': 60}",-0.7519227061811186,0.6081817915060751,20,0
+12,2020-03-19,majority_baseline|{},-0.19383152974719284,True,23,one-standard-error rule,majority_baseline|{},-0.19383152974719284,0.5129310839936835,7,0
+24,2021-03-19,"random_forest|{'max_depth': 5, 'min_samples_leaf': 50}",0.39411196158685435,False,23,one-standard-error rule,"lightgbm|{'num_leaves': 15, 'learning_rate': 0.1, 'min_child_samples': 30}",0.8317408236819486,0.5569544303783917,13,0
+36,2022-03-18,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 30}",1.8642931470608446,False,23,one-standard-error rule,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 30}",1.8642931470608446,0.7130629100571054,3,0
+48,2023-03-21,"random_forest|{'max_depth': 5, 'min_samples_leaf': 20}",1.1750639397286524,False,23,one-standard-error rule,"lightgbm|{'num_leaves': 15, 'learning_rate': 0.03, 'min_child_samples': 30}",1.480376653888938,0.6112592897605644,6,1
+60,2024-03-21,"random_forest|{'max_depth': 3, 'min_samples_leaf': 20}",0.12141748831093208,False,23,one-standard-error rule,"random_forest|{'max_depth': 5, 'min_samples_leaf': 20}",0.6400670071925382,0.6417969033980199,2,1
+72,2025-03-25,majority_baseline|{},-0.4932707863513189,True,23,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",-0.284853607482818,0.6470277159096833,13,0
+84,2026-03-26,"logistic|{'C': 0.01, 'class_weight': None}",0.14157706750867882,False,23,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",0.5787862679008655,0.7452671176239322,6,0
