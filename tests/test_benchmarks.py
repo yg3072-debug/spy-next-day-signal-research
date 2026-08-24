@@ -23,7 +23,9 @@ from build_benchmarks import (  # noqa: E402
     breakeven_cost_o2c,
     cash_return,
     decompose_vs_always_long,
+    intraday_financing,
     load_snapshot,
+    run_c2c,
     run_o2c,
     volatility_matched,
 )
@@ -169,17 +171,56 @@ def test_cash_is_accrued_simply_not_as_an_effective_annual_rate():
     assert rf.iloc[2] > compounded, "simple accrual must exceed the compounded reading"
 
 
-def test_intraday_financing_is_a_declared_charge_not_a_default(pieces):
-    """The base case assumes collateral keeps accruing; the alternative charges
-    the risk-free rate for the hours the position is open. Both must be available
-    and the difference must be material enough to declare."""
+def test_intraday_financing_uses_session_length_not_a_share_of_the_daily_rate(snapshot, pieces):
+    """Charging a fraction of the daily cash return double-counts weekends.
+
+    The daily cash return after a Friday already spans three calendar days. A
+    position is open for one session, so the charge must be built from session
+    minutes, not scaled off that three-day accrual.
+    """
+    d = snapshot
+    f = intraday_financing(d, d.index)
+
+    # A Monday must not be charged three times a Tuesday at a comparable rate.
+    gaps = d.index.to_series().diff().dt.days
+    lit = d.DGS3MO.shift(1) > 1.0
+    mondays = f[(gaps == 3) & lit & (d.session_minutes == 390)]
+    singles = f[(gaps == 1) & lit & (d.session_minutes == 390)]
+    assert mondays.mean() == pytest.approx(singles.mean(), rel=0.15)
+
+    # A 210-minute session forgoes proportionally less than a 390-minute one.
+    short = f[(d.session_minutes == 210) & lit]
+    full = f[(d.session_minutes == 390) & lit]
+    assert short.mean() < full.mean()
+
+    # Scale check against the closed form.
+    oos = d.index[1060:]
+    annual_cost = f.loc[oos].mean() * TRADING_DAYS
+    closed_form = (d.loc[oos, "DGS3MO"].mean() / 100) * (TRADING_DAYS * 6.5) / (365 * 24)
+    assert annual_cost == pytest.approx(closed_form, rel=0.02)
+
+
+def test_financing_is_charged_by_default_and_omitting_it_is_the_sensitivity(pieces, snapshot):
     _, r_o2c, rf = pieces
     long_only = pd.Series(1.0, index=r_o2c.index)
+    f = intraday_financing(snapshot, r_o2c.index)
+    charged = run_o2c(long_only, r_o2c, rf, 2.0, financing=f)["ann_mean_excess"]
     free = run_o2c(long_only, r_o2c, rf, 2.0)["ann_mean_excess"]
-    charged = run_o2c(long_only, r_o2c, rf, 2.0, charge_intraday_financing=True)["ann_mean_excess"]
-    drag = free - charged
-    assert drag == pytest.approx((6.5 / 24) * rf.mean() * TRADING_DAYS, rel=1e-12)
-    assert drag > 2e-4, "the charge is large enough that leaving it implicit would be sloppy"
+    assert free > charged
+    assert free - charged == pytest.approx(f.mean() * TRADING_DAYS, rel=1e-12)
+
+
+def test_borrow_accrues_over_calendar_days(pieces):
+    """A short carried across a weekend is charged three days of borrow."""
+    _, r_o2c, rf = pieces
+    idx = r_o2c.index
+    short = pd.Series(-1.0, index=idx)
+    r_c2c = pd.Series(0.0, index=idx)
+    flat_rf = pd.Series(0.0, index=idx)
+    stats = run_c2c(short, r_c2c, flat_rf, 0.0)
+    days = idx.to_series().diff().dt.days.fillna(1.0)
+    expected = -(0.0025 * days / 365.0).mean() * TRADING_DAYS
+    assert stats["ann_mean_excess"] == pytest.approx(expected, rel=1e-10)
 
 
 # ------------------------------------------------------------------ invariance

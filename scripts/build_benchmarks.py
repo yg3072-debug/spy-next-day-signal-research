@@ -12,19 +12,23 @@ settled end-of-day balances over actual calendar days, so a Friday-to-Monday gap
 earns three days. The rate dated t is published by H.15 on the following business
 day, so accrual for session t uses the rate dated t-1.
 
-Primary specification (intraday, Open to Close).  The account is flat at every
-close, so its end-of-day balance is whole and earns the full daily cash return
-regardless of the intraday position. Total return is therefore
+Primary specification (intraday, Open to Close).  Figures are excess returns on
+unit notional: the active trading P&L of the position, stated against cash.
 
-    R_total = rf + w * R_o2c - 2c|w|          excess: w * R_o2c - 2c|w|
+    excess = w * R_o2c - 2c|w| - f|w|
 
-with cost 2c per active day because entry at the open and exit at the close are a
-complete round trip, not a rebalance.
+Cost is 2c on every active day because entry at the open and exit at the close are
+a complete round trip, not a rebalance. The financing term f is the interest given
+up while capital sits in equity rather than in bills, built from session length so
+that a weekend is not double-counted and an early close is charged less. Charging
+it is the default: a zero-cost collateral overlay is a financing structure that
+would have to be specified, not a natural baseline for a study of an ETF.
 
 Alternative specification (overnight, Close to Close).  Positions are held over
-the close, so the capital is deployed and earns no cash return:
+the close, so the capital is deployed and earns no cash return, and borrow accrues
+over the calendar days the short is actually carried:
 
-    excess = w * (R_c2c - rf) - c|dw| - borrow * max(-w, 0)
+    excess = w * (R_c2c - rf) - c|dw| - b * (calendar days / 365) * max(-w, 0)
 
 Sharpe ratios use excess returns throughout. Cash has zero excess return and zero
 excess volatility, so its Sharpe is undefined and is reported as such rather than
@@ -135,26 +139,43 @@ def breakeven_cost_o2c(weights: pd.Series, r_o2c: pd.Series) -> float:
     return np.nan if exposure == 0 else gross / (2.0 * exposure) * 1e4
 
 
+def intraday_financing(frame: pd.DataFrame, index: pd.Index) -> pd.Series:
+    """Interest forgone while capital sits in equity rather than in bills.
+
+        f_t = (y_{t-1} / 100) * session_minutes_t / (365 * 24 * 60)
+
+    Charging a fraction of the *daily* cash return would double-count weekends,
+    because that return already spans three calendar days after a Friday. The
+    position is open for one session, not for a fraction of the gap since the
+    previous one. Using session_minutes also handles early closes without a
+    special case: a 210-minute session forgoes proportionally less.
+    """
+    annual = frame.loc[index, "DGS3MO"].shift(1) / 100.0
+    minutes = frame.loc[index, "session_minutes"]
+    return (annual * minutes / (365.0 * 24.0 * 60.0)).fillna(0.0)
+
+
 def run_o2c(
     weights: pd.Series, r_o2c: pd.Series, rf: pd.Series, cost_bps: float,
-    charge_intraday_financing: bool = False,
+    financing: pd.Series | None = None,
 ) -> dict:
     """Intraday specification: full round trip on every active day.
 
-    Reported quantities are **excess returns on unit notional**: the active
-    trading P&L of the position, stated against cash. The base case charges no
-    intraday financing, which corresponds to a collateralised overlay where bill
-    collateral keeps accruing while the equity exposure is held. The alternative,
-    where deploying cash into SPY forgoes the risk-free rate for the 6.5 hours the
-    position is open, is available here and run as a pre-declared sensitivity: it
-    costs about 0.77% a year at full participation on this sample, roughly
-    0.15 bp per side. It is stated rather than buried because the two assumptions
-    are not equivalent and the difference is not negligible against a 2 bp cost.
+    Reported quantities are excess returns on unit notional: the active trading
+    P&L of the position, stated against cash.
+
+    Pass `financing` to charge the interest given up while capital is in equity
+    rather than in bills; see `intraday_financing`. That is the conservative
+    default and the one used throughout, because a zero-cost collateral overlay is
+    a financing structure that would have to be specified and justified, not a
+    natural baseline for a study of an ETF. On this sample the charge is about
+    0.53% a year at full participation, roughly 0.10 bp per side. Omitting it is
+    the pre-declared sensitivity, not the default.
     """
     c = cost_bps / 1e4
     excess = weights * r_o2c - 2.0 * c * weights.abs()
-    if charge_intraday_financing:
-        excess = excess - (6.5 / 24.0) * rf * weights.abs()
+    if financing is not None:
+        excess = excess - financing * weights.abs()
     total = rf + excess
     stats = performance(excess, total, weights)
     stats["breakeven_cost_bps_per_side"] = breakeven_cost_o2c(weights, r_o2c)
@@ -169,7 +190,10 @@ def run_c2c(weights: pd.Series, r_c2c: pd.Series, rf: pd.Series, cost_bps: float
     c = cost_bps / 1e4
     dw = weights.diff()
     dw.iloc[0] = weights.iloc[0]                       # opening the initial position costs too
-    borrow = (BORROW_ANNUAL / 365.0) * np.maximum(-weights, 0.0)
+    # Borrow accrues over calendar days held, so a position carried across a
+    # weekend is charged three days, not one.
+    held_days = weights.index.to_series().diff().dt.days.fillna(1.0)
+    borrow = BORROW_ANNUAL * (held_days / 365.0) * np.maximum(-weights, 0.0)
     excess = weights * (r_c2c - rf) - c * dw.abs() - borrow
     total = rf + excess
     stats = performance(excess, total, weights)
@@ -209,24 +233,34 @@ def c2c_benchmarks(d: pd.DataFrame) -> dict[str, pd.Series]:
 
 
 def decompose_vs_always_long(
-    weights: pd.Series, r_o2c: pd.Series, cost_bps: float
+    weights: pd.Series, r_o2c: pd.Series, cost_bps: float,
+    financing: pd.Series | None = None,
 ) -> dict:
-    """Split the excess over always-long O2C into timing and cost saving.
+    """Split the excess over always-long O2C into what the direction calls earned
+    and what was saved by not being in the market.
 
-        R_strategy - R_always_long = (w - 1) * R_o2c  +  2c * (1 - |w|)
+        R_strategy - R_always_long
+            = (w - 1) * R_o2c  +  2c * (1 - |w|)  +  f * (1 - |w|)
+              └ timing ─┘        └ cost saving ┘    └ financing saving ┘
 
-    The first term is what the direction calls earn or lose; the second is money
-    saved by not trading. A strategy with no predictive ability can still beat a
-    loss-making always-on benchmark purely through the second term, so the two
-    must be reported apart.
+    Only the first term is evidence of predictive ability. The other two accrue to
+    anything that trades less, so a strategy with no skill at all can beat a
+    loss-making always-on benchmark on the sum. Reporting them apart is what stops
+    that from being read as alpha.
     """
     c = cost_bps / 1e4
     timing = (weights - 1.0) * r_o2c
     saving = 2.0 * c * (1.0 - weights.abs())
-    total = timing + saving
+    fin_saving = (
+        financing * (1.0 - weights.abs())
+        if financing is not None
+        else pd.Series(0.0, index=weights.index)
+    )
+    total = timing + saving + fin_saving
     return {
         "ann_gross_timing": timing.mean() * TRADING_DAYS,
         "ann_cost_saving": saving.mean() * TRADING_DAYS,
+        "ann_financing_saving": fin_saving.mean() * TRADING_DAYS,
         "ann_net_excess_vs_always_long": total.mean() * TRADING_DAYS,
     }
 
@@ -248,12 +282,13 @@ def volatility_matched(returns: pd.Series, target_ann_vol: float) -> pd.Series:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--reps", type=int, default=10_000, help="bootstrap resamples; 0 to skip")
-    ap.add_argument("--block", type=float, default=10.0, help="mean block length in sessions")
+    ap.add_argument("--block", type=float, default=20.0, help="mean block length in sessions")
     args = ap.parse_args()
     reps, block = args.reps, args.block
 
     d, manifest = load_snapshot()
     rf_all = cash_return(d)
+    fin_all = intraday_financing(d, d.index)   # charged by default; parity with P1
 
     r_o2c = pd.Series(d.Close.values / d.Open.values - 1.0, index=d.index)   # simple
     r_c2c = d.Close.pct_change().fillna(0.0)
@@ -270,7 +305,8 @@ def main() -> int:
     for wname, idx in windows.items():
         for cost in COST_SCENARIOS_BPS:
             for name, w in o2c_benchmarks(d).items():
-                stats = run_o2c(w.loc[idx], r_o2c.loc[idx], rf_all.loc[idx], cost)
+                stats = run_o2c(w.loc[idx], r_o2c.loc[idx], rf_all.loc[idx], cost,
+                                financing=fin_all.loc[idx])
                 rows.append({"window": wname, "spec": "O2C", "benchmark": name,
                              "cost_bps_per_side": cost, **stats})
             for name, w in c2c_benchmarks(d).items():
@@ -326,9 +362,10 @@ def main() -> int:
     print("always-long benchmark is cost saving, with zero timing contribution.\n")
     zero = pd.Series(0.0, index=oos)
     for cost in (1.0, 2.0, 5.0):
-        dec = decompose_vs_always_long(zero, r_o2c.loc[oos], cost)
+        dec = decompose_vs_always_long(zero, r_o2c.loc[oos], cost, fin_all.loc[oos])
         print(f"  c={cost:g} bp/side   gross timing {dec['ann_gross_timing']:+.2%}"
               f"   cost saving {dec['ann_cost_saving']:+.2%}"
+              f"   financing saving {dec['ann_financing_saving']:+.2%}"
               f"   net {dec['ann_net_excess_vs_always_long']:+.2%}")
 
     # ------------------------------------------------------------------ intervals
@@ -338,7 +375,8 @@ def main() -> int:
         print(f"{'='*150}")
         c = COST_BPS_PER_SIDE / 1e4
         excess = {
-            name: (w.loc[oos] * r_o2c.loc[oos] - 2 * c * w.loc[oos].abs())
+            name: (w.loc[oos] * r_o2c.loc[oos] - 2 * c * w.loc[oos].abs()
+                   - fin_all.loc[oos] * w.loc[oos].abs())
             for name, w in o2c_benchmarks(d).items()
         }
         excess["SPY buy-and-hold"] = r_c2c.loc[oos] - rf_all.loc[oos]
@@ -364,19 +402,19 @@ def main() -> int:
                 dl = bootstrap_difference(e, ref_long, sharpe, block, reps)
                 row["d_sharpe_vs_long"] = dl["point"]
                 row["d_sharpe_vs_long_ci_low"] = dl["ci_low"]
-                row["d_sharpe_vs_long_p_le_0"] = dl["p_le_zero"]
+                row["d_sharpe_vs_long_frac_le_0"] = dl["fraction_le_zero"]
                 row["jk_memmel_p"] = jobson_korkie_memmel(e, ref_long)["p_two_sided"]
             if name != "Cash":
                 dc = bootstrap_difference(e, ref_cash, ann_mean, block, reps)
                 row["d_annmean_vs_cash_ci_low"] = dc["ci_low"]
-                row["d_annmean_vs_cash_p_le_0"] = dc["p_le_zero"]
+                row["d_annmean_vs_cash_frac_le_0"] = dc["fraction_le_zero"]
             irows.append(row)
 
         intervals = pd.DataFrame(irows)
         intervals.to_csv(outdir / "benchmark_intervals.csv", index=False, float_format="%.8g")
         show = [
             "benchmark", "politis_white_block", "sharpe", "sharpe_ci_low", "sharpe_ci_high",
-            "d_sharpe_vs_long", "d_sharpe_vs_long_ci_low", "d_sharpe_vs_long_p_le_0",
+            "d_sharpe_vs_long", "d_sharpe_vs_long_ci_low", "d_sharpe_vs_long_frac_le_0",
             "d_annmean_vs_cash_ci_low",
         ]
         print(intervals[show].to_string(index=False, float_format=lambda v: f"{v:8.3f}"))

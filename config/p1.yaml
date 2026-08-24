@@ -34,6 +34,13 @@ target:
 walk_forward:
   outer_step_sessions: 21              # monthly refit
   retune_every_outer_steps: 12         # annual reselection
+  # 1,866 out-of-sample sessions divide into 88 full blocks plus a remainder of 18.
+  # The remainder is predicted with the last fitted pipeline rather than dropped,
+  # so no out-of-sample session is discarded: 89 steps, with retunes at step
+  # 0, 12, 24, 36, 48, 60, 72 and 84 — eight of them, not seven.
+  keep_final_partial_block: true
+  expected_outer_steps: 89
+  expected_retunes: 8
   window: expanding                    # rolling-1000 is E13, not P1
   embargo_sessions: 1
 
@@ -54,6 +61,14 @@ walk_forward:
 inner_cv:
   splitter: TimeSeriesSplit
   n_splits: 5
+  # test_size is fixed rather than left to the default. With the default, the first
+  # outer-train of 1,000 rows gives a first inner-train of 169 rows, which cannot
+  # support screening 81 features whose own IC window is 60 sessions, let alone a
+  # three-class fit and a calibration on top. Fixing test_size at 100 makes the
+  # first inner-train 499 rows and holds the inner out-of-sample at the most recent
+  # 500 sessions as the outer-train grows. That is also the more defensible
+  # economic statement: selection is made on the last two years.
+  test_size: 100
   gap: 1
   # Feature selection and quantile estimation depend only on the inner-train slice,
   # not on the candidate configuration, so they are computed once per inner fold and
@@ -119,19 +134,35 @@ models:
       max_depth: [2, 3]
       learning_rate: [0.03, 0.1]
 
-# 1 + 6 + 4 + 8 + 4 = 23 candidate configurations per retune.
+# 1 + 6 + 4 + 8 + 4 = 23 model configurations.
 
 # ------------------------------------------------------------------- calibration
 
 calibration:
-  method: isotonic
-  # Cross-fitted: raw probabilities are produced on inner-validation folds, the
-  # calibrator is fitted on the concatenated inner-OOS, and the base estimator is
-  # refitted on the full outer-train. This is sklearn's CalibratedClassifierCV with
-  # ensemble=False. The base estimator is better fitted after the refit than it was
-  # on the folds the calibrator saw; that mismatch is inherent to cross-fitting and
-  # is reported through the calibration diagnostics rather than assumed away.
-  ensemble: false
+  method: sigmoid                # Platt scaling
+  # Isotonic is the E-group alternative, not the default. With an inner
+  # out-of-sample of 500 rows and three classes, one-vs-rest isotonic sees roughly
+  # 167 points per class, well inside the range where it overfits. Sigmoid fits two
+  # parameters per class and is stable at this size.
+  min_calibration_samples: 300   # below this the step is skipped and recorded
+  implementation: hand_rolled_cross_fit
+  # sklearn's CalibratedClassifierCV cannot be used. It takes one fixed y, but the
+  # label thresholds are estimated inside each fold, so the same historical
+  # observation can carry different labels in different folds. The cross-fitting is
+  # therefore written out explicitly:
+  #
+  #   scoring an inner fold
+  #       thresholds, features, scaler, model, class-conditional means, and the
+  #       calibrator's own nested cross-fit are all estimated on that fold's
+  #       inner-train, then applied to its inner-validation
+  #
+  #   the monthly refit
+  #       a fresh cross-fit inside outer-train produces out-of-fold probabilities,
+  #       the calibrator is fitted on those, and the base estimator is refitted on
+  #       all of outer-train
+  #
+  # The monthly refit therefore costs K fits for the cross-fit plus one final fit,
+  # not one fit. See compute_budget.
   diagnostics_required:
     - inner_oos_brier_score
     - inner_oos_brier_skill_vs_train_base_rate
@@ -140,16 +171,21 @@ calibration:
 
 expected_return_mapping:
   # mu_hat = sum_c  P_calibrated(c | x) * E[R | c]
-  # E[R | c] is the mean simple O2C return of outer-train observations labelled c,
-  # using that refit's own quantiles. Outer-train only.
-  class_conditional_mean_source: outer_train
+  #
+  # The estimation slice depends on which prediction is being made, and getting it
+  # wrong is a leak: outer-train contains every inner-validation, so using
+  # outer-train means to score an inner fold lets the inner score see the realised
+  # returns it is being graded on.
+  class_conditional_mean_source:
+    when_scoring_an_inner_fold: inner_train
+    when_predicting_outer_validation: outer_train
 
 # ---------------------------------------------------------------- trading rule
 
 position_rule:
-  # w = +1 if mu_hat > (1 + delta_multiple) * 2c ; -1 if below the negative of it.
-  # delta is expressed as a multiple of the round-trip cost so it stays meaningful
-  # when the cost scenario changes.
+  # w = +1 if mu_hat > (1 + delta_multiple) * 2c ; -1 below the negative of it.
+  # delta is a multiple of the round-trip cost so it stays meaningful when the cost
+  # scenario changes.
   threshold: cost_determined
   delta_multiple_grid: [0.0, 0.5, 1.0, 2.0]
   positions: [-1, 0, 1]
@@ -158,8 +194,13 @@ costs:
   base_bps_per_side: 2.0           # assumed all-in execution cost, not a quoted spread
   round_trip_multiplier: 2         # entry at the open and exit at the close
   scenarios_bps_per_side: [0.0, 1.0, 2.0, 5.0, 10.0]
-  intraday_financing_charged: false   # base case; charged variant is E-group
-  borrow_annual_bps: 25               # applies to the C2C specification only
+  # Charged by default. A zero-cost collateral overlay is a financing structure
+  # that would have to be specified and justified, not a natural baseline for a
+  # study of an ETF, so the conservative reading is the primary one. The charge is
+  # y * session_minutes / (365*24*60), about 0.53% a year at full participation on
+  # this sample, roughly 0.10 bp per side. Omitting it is the sensitivity.
+  intraday_financing_charged: true
+  borrow_annual_bps: 25            # C2C only, accrued over calendar days held
 
 # ------------------------------------------------------------------- selection
 # The one-standard-error rule, stated precisely enough to be executed without
@@ -178,22 +219,43 @@ selection:
                                    # inside the selection loop affects no published
                                    # number, only the width of the tie band.
     seed_offset: 101
+  # The candidate space is the full cross product: 23 model configurations times 4
+  # delta values = 92 candidates, selected in one pass. Choosing delta per model
+  # first and then applying the rule across models would be a two-stage selection,
+  # which is a second comparison hidden inside the first.
+  candidate_space: model_config_x_delta
+  n_candidates: 92
+  eligibility: "score_j >= score_best - se_best"
+  # The band is one standard error *of the best candidate*, not of each candidate.
   rule: >
-    Take the configuration with the highest primary metric. Among all configurations
-    whose primary metric is within one standard error of that maximum, take the
-    simplest, where simpler means the lower (complexity_rank, within_family_rank)
-    in the declared ordering. Ties beyond that resolve to the earliest entry in the
-    declared grid order.
+    Take the candidate with the highest primary metric. Among all candidates whose
+    primary metric is at least the best score minus the best candidate's standard
+    error, take the simplest by the ordering key below. Remaining ties resolve to
+    the earliest entry in the declared grid order.
+  simplicity_key: [complexity_rank, within_family_rank, negative_delta_multiple]
+  # A larger delta trades less and is the more conservative rule, so it counts as
+  # simpler. Hence the negation: -2.0 sorts before -0.0.
   constraints:
-    # Diagnostics that can veto a candidate, but never rank one.
     min_active_positions_inner_oos: 30
     require_finite_sharpe: true
   degenerate_handling: >
-    A configuration with fewer than 30 active positions on the concatenated
-    inner-OOS, or with undefined Sharpe because its excess return has zero
-    variance, is excluded from ranking and recorded as degenerate. If every
-    configuration is degenerate at a retune, the majority baseline is selected and
-    the step is flagged as having produced no tradeable model.
+    A candidate with fewer than 30 active positions on the concatenated inner-OOS,
+    or with undefined Sharpe because its excess return has zero variance, is
+    excluded from ranking and recorded as degenerate. If every candidate is
+    degenerate at a retune, the majority baseline is selected and the step is
+    flagged as having produced no tradeable model.
+
+# ---------------------------------------------------------------- compute budget
+
+compute_budget:
+  # Corrected. The monthly refit is not a single fit: it cross-fits the calibrator
+  # inside outer-train and then refits the base estimator on all of it.
+  fits_per_candidate_per_inner_fold: 5   # 4 nested calibration folds + 1 model fit
+  inner_fits_per_retune: 575             # 23 configs x 5 folds x 5
+  retunes: 8
+  fits_per_monthly_refit: 6              # 5 calibration cross-fit + 1 final
+  outer_steps: 89
+  total_fits_approx: 5134
 
 # ------------------------------------------------------------------ determinism
 
