@@ -96,14 +96,17 @@ procedure's 1.086. It is the best number in the study.
 It is reported, in specification order, alongside every other row, and it is not the finding:
 
 - its Sharpe difference against the confirmatory run is +0.501 with an interval of **[−0.107, +1.138]**
-- it is the maximum of **33 comparable realised strategy paths**, and the expected maximum from
-  pure noise at that count and spread is **+0.615** — the best result in the study is *below*
-  what chance would be expected to produce across the number of things tried
+- it is the maximum of **33 comparable realised strategy paths**, and an independence-based
+  descriptive reference puts the expected maximum at **+0.615**. That is a statement of scale,
+  not a test: the paths are strongly correlated, so they are nowhere near 33 independent draws,
+  and the expression assumes the independence they lack
 - fixing one model family for the whole sample **requires knowing in advance which family to
   fix**; the selection rule chose LightGBM at two of eight reselections and nothing at the other
   six pointed to it
-- all four family-fixed runs also lose the ability to abstain, so whether the gain comes from the
-  model or from being forced to hold a position more often **is not identified by this design**
+- all four family-fixed runs also drop the prior-only baseline from the **selector's** candidate
+  set — the trading rule can still produce Flat — and participation rises to 44.9% from 33.2%, so
+  whether the gain comes from the model or from holding a position more often **is not identified
+  by this design**
 
 **What calibrates the whole table is the seed.** Three runs differing from the confirmatory
 procedure *only* in the random seed give Sharpe ratios of −0.297, −0.141 and −0.175 against its

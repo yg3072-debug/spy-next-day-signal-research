@@ -63,8 +63,15 @@ TRADING_DAYS = 252
 
 # --------------------------------------------------------------------------- data
 
-def load_snapshot() -> tuple[pd.DataFrame, dict]:
-    csv = sorted(glob.glob(str(ROOT / "data" / "market_inputs_*.csv")))[-1]
+def load_snapshot(directory: str | None = None) -> tuple[pd.DataFrame, dict]:
+    """The frozen snapshot, or a named vintage directory for E21.
+
+    Defaults to data/ and therefore to the frozen snapshot. A vintage is passed in
+    explicitly; nothing picks one up by accident, and E21's download is written
+    somewhere the default glob cannot see.
+    """
+    base = ROOT / (directory or "data")
+    csv = sorted(glob.glob(str(base / "market_inputs_*.csv")))[-1]
     manifest = json.loads(Path(csv.replace(".csv", ".manifest.json")).read_text("utf-8"))
     frame = pd.read_csv(csv, index_col="Date", parse_dates=True)
     return frame, manifest

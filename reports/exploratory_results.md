@@ -101,12 +101,19 @@ among that many draws of pure noise with the observed spread:
 | Comparable realised strategy paths | **33** |
 | Spread of their Sharpe ratios (sd) | 0.291 |
 | **Best observed** | **+0.357** |
-| **Expected maximum from noise alone at N = 43** | **+0.615** |
+| Expected maximum under an **independence-based** reference | **+0.615** |
 
-**The best result in the study is below what chance would be expected to produce
-across the number of things tried.** The reference is descriptive rather than a
-test — it adjusts no interval and assumes an independence these strongly correlated
-paths do not have — but the direction of the comparison is not ambiguous.
+Under an independence-based descriptive reference, the expected maximum is +0.615
+against an observed best of +0.357. **This is not a threshold and not a
+significance test.** The 33 paths are strongly correlated — many share a training
+window, a feature screen and most of their positions — so they are nowhere near 33
+independent draws, and the expression assumes exactly the independence they lack.
+Saying "the best result is below what luck would give" would present a descriptive
+formula as a formal test, which it is not.
+
+What it is good for is scale. It says the observed maximum is not large relative to
+what a set of trials of this size and spread can throw up, which is a reason to be
+unimpressed by it rather than a demonstration that it is noise.
 
 **It was not available to be chosen.** E5 through E8 fix one model family for the
 entire sample, which requires knowing in advance which family to fix. P1's
@@ -114,12 +121,14 @@ one-standard-error rule selected LightGBM at two of eight reselections; nothing
 available at any of the other six pointed to it. The specification that produced
 +0.357 is only reachable with the answer already in hand.
 
-**Its sibling behaves the same way for the opposite reason.** E5 (logistic only)
-and E6 (random forest only) return −0.226 and −0.360. All four family-fixed runs
-also remove the majority baseline, so they cannot abstain; participation rises to
-43–45% from P1's 33%. Whether E7's result comes from LightGBM being right or from
-being forced to hold a position more often is not identified by this design, and
-nothing here separates them.
+**Its siblings do not behave like it.** E5 (logistic only) and E6 (random forest
+only) return −0.226 and −0.360. All four family-fixed runs also drop the majority
+baseline from the candidate set, which removes **the selector's ability to fall
+back to a prior-only model** — not the strategy's ability to stand aside, since the
+cost band still produces Flat whenever `mu_hat` fails to clear it. Participation
+nevertheless rises to 43–45% from P1's 33%. Whether E7's result comes from LightGBM
+being the right family or from holding a position more often is not identified by
+this design, and nothing here separates them.
 
 ---
 

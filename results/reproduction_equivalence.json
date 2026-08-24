@@ -1,0 +1,110 @@
+{
+  "original_commit": "120f3e9",
+  "fields": {
+    "model": {
+      "identical": true
+    },
+    "params": {
+      "identical": true
+    },
+    "delta": {
+      "identical": true
+    },
+    "calibration_skipped": {
+      "identical": true
+    },
+    "p_short": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "p_flat": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "p_long": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "mu_hat": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "position": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "financing": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "realised_o2c": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "gross": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "execution_cost": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "financing_cost": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "net": {
+      "identical": true,
+      "max_abs_difference": 0.0
+    },
+    "selection_log.csv": {
+      "identical": true
+    },
+    "feature_stability.csv": {
+      "identical": true
+    }
+  },
+  "sessions": 1865,
+  "metrics": {
+    "original": {
+      "sharpe": -0.1443541670734307,
+      "ann_mean_excess": -0.013206419495668541,
+      "active_sessions": 620,
+      "long": 516,
+      "flat": 1245,
+      "short": 104
+    },
+    "reproduction": {
+      "sharpe": -0.1443541670734307,
+      "ann_mean_excess": -0.013206419495668541,
+      "active_sessions": 620,
+      "long": 516,
+      "flat": 1245,
+      "short": 104
+    }
+  },
+  "metrics_identical": true,
+  "manifest_original": {
+    "config_sha256": "c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7",
+    "snapshot_sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
+    "code_commit": "0adfc1db96d9a7c74694ad2d1411b02f0d8b61d9",
+    "seconds": 1235.4,
+    "packages": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3"
+    }
+  },
+  "manifest_reproduction": {
+    "config_sha256": "c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7",
+    "snapshot_sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
+    "code_commit": "5e0700536b7bcab10d456aaaa597a94a75821465",
+    "seconds": 1622.2,
+    "packages": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3"
+    }
+  },
+  "same_config_snapshot_and_packages": true,
+  "verdict": "bit_identical",
+  "disposition": "The reproduction is a supplementary artefact. The first execution stands as the primary result, is preserved under results/p1_original/, and neither run was chosen over the other on the basis of what it produced."
+}

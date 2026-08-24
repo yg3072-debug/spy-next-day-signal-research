@@ -199,13 +199,17 @@ set with the window, which is the most common way an incremental test is quietly
 not one.
 
 The positive shifts are the placebo §9.1 asks for: stale news, still legitimate
-information. **The negative shifts are not a placebo — they are a positive
-control.** They hand the model text it could not have had. If next month's
-headlines do not improve the result either, then a null at the true alignment says
-much less than it appears to: it would mean the pipeline cannot detect text of this
-kind at all, and the interesting quantity is the sensitivity of the procedure rather
-than the informativeness of the data. Knowing which of the two applies is worth more
-than the incremental test itself.
+information. **The negative shifts are future-shift leakage stress tests.** They
+hand the model text it could not have had, and ask whether a deliberate leak of
+that kind produces a positive result.
+
+A negative shift is **not a positive control** and is not called one here. A true
+positive control injects a variable known by construction to carry the answer, in
+order to demonstrate that the screening and fitting pipeline can find a strong
+signal when one is present. Next month's headlines are not that: they are real
+text that happens to be unavailable, and there is no guarantee they predict
+tomorrow's return either. What a negative shift tests is narrower — whether a
+deliberate leak of this particular kind produces a positive result.
 
 ### Results
 
@@ -229,20 +233,20 @@ rows, paired stationary bootstrap against N0.
 alignment moves the Sharpe ratio by −0.271, and that is not distinguishable from
 no change.
 
-**Read the positive controls before drawing any conclusion about news.** N1m5,
-N1m10, N1m20 and N1m60 were handed headlines from five, ten, twenty and sixty
-sessions in the future — information no tradeable procedure could have. **All four
-have negative point estimates against N0.** Being told the future did not help.
+**The leakage stress tests.** N1m5, N1m10, N1m20 and N1m60 were handed headlines
+from five, ten, twenty and sixty sessions in the future — information no tradeable
+procedure could have. **All four have negative point estimates against N0.**
 
-That reframes the whole test. A null at the true alignment would ordinarily be read
-as "these headlines do not predict this return". Here it cannot be, because the
-procedure did not improve when given headlines that trivially do contain the
-answer. **What the experiment establishes is a property of the procedure, not of
-the data**: at this sample size, with this feature screen, adding thirty-seven
-text columns to eighty-one market columns degrades the result regardless of what
-the text says. The screen must choose twenty-five features from one hundred and
-eighteen instead of eighty-one, and the cost of the extra dilution exceeds anything
-the additional columns contribute.
+An earlier draft read this as proof that adding text columns degrades the result
+*regardless of what the text says*. It does not support that. Future headlines are
+not guaranteed to predict tomorrow's open-to-close return, so their failure to help
+is not the same as a demonstration that the pipeline cannot use informative text.
+What these four rows establish is narrower: **these particular future shifts did not
+produce a positive result.**
+
+The dilution mechanism remains a plausible explanation — the screen must choose
+twenty-five features from one hundred and eighteen instead of eighty-one — but it is
+one candidate among several and this design does not separate them.
 
 The placebo arms make the same point from the other side. N1p60 — news from sixty
 sessions earlier, three months stale — is the **best of all ten arms** at +0.242,
@@ -251,12 +255,23 @@ headlines predict tomorrow's open-to-close return. That row is what noise looks
 like when ten arms are run, and it is exactly why the protocol requires all ten to
 be reported rather than the best one.
 
-**What this does not license.** It is not evidence that financial news carries no
-information about next-day returns. It is evidence that this procedure, on this
-sample, cannot detect such information even when it is inserted artificially. A
-design that could — fewer, stronger text features; a screen that does not put text
-and market columns in direct competition; a longer sample — is a different study,
-and one this result gives a concrete reason to specify.
+**The strictest statement the evidence supports.** Adding the current thirty-seven
+news variables produced no measurable increment. The observed degradation may come
+from the news carrying too little information, from feature-selection competition,
+from the sample size, or from model capacity — **this design does not distinguish
+between those causes.**
+
+It is not evidence that financial news carries no information about next-day
+returns, and it is not proof that any text would fail. A design that could separate
+the causes — an injected synthetic variable as a genuine positive control for the
+pipeline, fewer and stronger text features, a screen that does not put text and
+market columns in direct competition, a longer sample — is a different study, and
+one this result gives concrete reasons to specify.
+
+A genuine positive control is worth naming as a missing piece: a variable
+constructed to correlate with the target by design, used purely to demonstrate that
+the screen and the model can recover a strong signal. It would be an engineering
+check and must never enter a research result.
 
 ---
 
