@@ -20,5 +20,15 @@
     "id": "E8",
     "status": "ok",
     "minutes": 6.91
+  },
+  {
+    "id": "E7",
+    "status": "ok",
+    "minutes": 9.73
+  },
+  {
+    "id": "E13",
+    "status": "ok",
+    "minutes": 12.76
   }
 ]
