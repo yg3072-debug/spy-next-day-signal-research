@@ -30,5 +30,25 @@
     "id": "E13",
     "status": "ok",
     "minutes": 12.76
+  },
+  {
+    "id": "E6",
+    "status": "ok",
+    "minutes": 21.72
+  },
+  {
+    "id": "E14",
+    "status": "ok",
+    "minutes": 21.37
+  },
+  {
+    "id": "E4",
+    "status": "ok",
+    "minutes": 27.01
+  },
+  {
+    "id": "E15",
+    "status": "ok",
+    "minutes": 23.85
   }
 ]

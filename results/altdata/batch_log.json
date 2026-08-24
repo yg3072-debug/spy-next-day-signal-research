@@ -23,5 +23,30 @@
     "id": "N0",
     "status": "ok",
     "minutes": 13.65
+  },
+  {
+    "id": "N1p10",
+    "status": "ok",
+    "minutes": 12.73
+  },
+  {
+    "id": "N1p20",
+    "status": "ok",
+    "minutes": 12.46
+  },
+  {
+    "id": "N1p60",
+    "status": "ok",
+    "minutes": 12.58
+  },
+  {
+    "id": "N1m60",
+    "status": "ok",
+    "minutes": 12.89
+  },
+  {
+    "id": "N1m20",
+    "status": "ok",
+    "minutes": 13.99
   }
 ]

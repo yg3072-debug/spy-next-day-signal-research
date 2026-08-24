@@ -235,13 +235,18 @@ def build_truth_social_features(sessions: pd.Index, lexicon=None) -> pd.DataFram
     """Truth Social, with empty posts counted rather than scored.
 
     §9.4 insists that "image or repost with no text" and "scrape failure" are
-    different things. This archive distinguishes them: a row exists with an empty
-    `text` field, which is a post that carried no text, as opposed to a row that is
-    absent entirely. 26.5% of posts are in the first category. They are excluded
-    from the token and sentiment aggregates -- scoring an empty string would drag
-    every tone toward zero in proportion to how many images were posted -- and
-    carried as their own feature, because posting frequently without text is itself
-    a state.
+    different things. This archive distinguishes them only partly, and the limit is
+    worth stating here rather than in the docs alone. Every empty row was fetched
+    successfully -- it carries a status id, both URLs and a timestamp -- so none of
+    them is a network failure. But the collector extracts the body by regular
+    expression and writes nothing when no pattern matches, so an empty field is
+    either a genuinely text-free post or an extraction miss, and the two cannot be
+    separated from the archive alone. 26.5% is an upper bound on the first.
+
+    They are excluded from the token and sentiment aggregates -- scoring an empty
+    string would drag every tone toward zero in proportion to how many such rows a
+    session had -- and carried as their own feature, because posting without text is
+    itself a state. That reasoning holds under either cause.
     """
     raw = ALT / "truth_social_sessions.csv"
     if not raw.exists():

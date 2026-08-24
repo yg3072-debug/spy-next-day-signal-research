@@ -1,0 +1,9 @@
+step,date,chosen_id,chosen_score,baseline_selected,n_candidates,reason,best_id,best_score,se_best,n_eligible,n_degenerate
+0,2019-03-20,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",-1.4289240118324322,False,4,one-standard-error rule,"random_forest|{'max_depth': 3, 'min_samples_leaf': 20}",-1.3384549605322174,0.6116974953656881,4,0
+12,2020-03-19,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",-0.9448888806497437,False,4,one-standard-error rule,"random_forest|{'max_depth': 5, 'min_samples_leaf': 20}",-0.9266389852014502,0.5319271553828548,4,0
+24,2021-03-19,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",0.45263466033019234,False,4,one-standard-error rule,"random_forest|{'max_depth': 5, 'min_samples_leaf': 50}",0.5077458655177557,0.6037181604472494,4,0
+36,2022-03-18,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",0.23324091142587086,False,4,one-standard-error rule,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",0.23324091142587086,0.6608592321526977,4,0
+48,2023-03-21,"random_forest|{'max_depth': 5, 'min_samples_leaf': 50}",0.4119170288383108,False,4,one-standard-error rule,"random_forest|{'max_depth': 5, 'min_samples_leaf': 50}",0.4119170288383108,0.6063345130102984,2,0
+60,2024-03-21,"random_forest|{'max_depth': 3, 'min_samples_leaf': 20}",0.9153790410887859,False,4,one-standard-error rule,"random_forest|{'max_depth': 3, 'min_samples_leaf': 20}",0.9153790410887859,0.6450929612921921,1,0
+72,2025-03-25,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",-0.9077394239055858,False,4,one-standard-error rule,"random_forest|{'max_depth': 3, 'min_samples_leaf': 20}",-0.7199818325641575,0.6387030711260502,4,0
+84,2026-03-26,"random_forest|{'max_depth': 3, 'min_samples_leaf': 50}",-0.8288028049479146,False,4,one-standard-error rule,"random_forest|{'max_depth': 3, 'min_samples_leaf': 20}",-0.4480970686169675,0.7310981945275198,4,0

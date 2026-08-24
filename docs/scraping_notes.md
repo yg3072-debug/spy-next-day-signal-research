@@ -54,25 +54,75 @@ something the mapping had to fix.
 | Overlap with the modelling set | **446 sessions**, of which 443 carry at least one post and **3 carry none** |
 | Posts with no text | **3,749 (26.5%)** |
 
-Collection used a crawl of the archive's status pages with a repair pass for rows
-that failed on the first attempt. Both scripts are retained outside this
-repository with the raw output they produced, and the raw file's SHA-256 is
-recorded in the data manifest, so the frozen snapshot can be traced back to bytes
-that were not written by this project.
+### How the archive was collected
 
-### Empty posts are not missing posts
+Four scripts, run in sequence. All are retained outside this repository with the
+raw output they produced, and the raw file's SHA-256 is in the data manifest, so
+the frozen snapshot traces back to bytes this project did not write.
 
-26.5% of rows carry an empty `text` field. **This is not scrape failure.** A row
-exists, with a status id and a timestamp, and the post carried no text — an image,
-or a repost with no added comment. A scrape failure produces no row at all, and the
-repair pass exists to make that distinction hold. §9.4 requires the two to be kept
-separate and they are: empty posts are excluded from the token and sentiment
-aggregates and carried as their own feature, `truth_empty_post_count`.
+1. **`scrape_archive.py`** — an early prototype that read only the archive's front
+   page. Superseded and not used for the committed data.
+2. **`crawl_and_scrape_archive.py`** — the real collector. It walks the archive's
+   search endpoint from `start_date=2024-07-13` with an open end date,
+   `removed=include` so deleted posts are retained, 100 results per page, stopping
+   when a page yields no new URLs. It then fetches each status page at **one
+   request per second**, checkpointing every ten rows so an interrupted run
+   resumes rather than restarts.
+3. **`repair_failed_rows.py`** — re-fetches twenty specific status ids that the
+   main crawl left incomplete.
+4. **`clean_mojibike.py`** — an `ftfy` pass over the text columns.
 
-Scoring them instead would be quietly destructive. An empty string contributes zero
-positive and zero negative words, so a session of forty images would report a tone
-of exactly zero — indistinguishable from a session of forty balanced posts, and
-driven entirely by how much the account happened to post pictures.
+Two artefacts of that pipeline are visible in the frozen data and are worth
+naming, because both look like anomalies until you know where they came from.
+
+**The twenty rows with no timezone label are exactly the twenty the repair pass
+re-fetched.** `repair_failed_rows.py` extracts the timestamp with a parser that
+does not carry the `EDT`/`EST` suffix through, so those rows — status ids 26994
+to 27013, all on 2024-10-03 and 04 — arrive without a zone. They are localised
+through `America/New_York`'s own daylight-saving rule, which for early October is
+EDT, and counted separately in the manifest.
+
+**Mojibake is nearly absent because the crawler already repaired it.**
+`crawl_and_scrape_archive.py` applies a latin-1 → UTF-8 round trip, up to twice
+per string, at scrape time. By the time `ftfy` ran, there was almost nothing of
+that kind left, which is why the measurement below finds one apparent case and it
+is a false positive.
+
+### Empty text: what it is, and what cannot be determined
+
+3,749 rows (26.5%) carry an empty `text` field. **An earlier version of this
+document claimed these are cleanly separated from scrape failures. That claim was
+wrong and is withdrawn.**
+
+Here is what the pipeline actually does. `parse_post_page` extracts the post body
+by matching three regular expressions against the flattened page text, then
+rejects three boilerplate patterns. If no pattern matches, or the match is
+boilerplate, it sets `text_raw = None`. So an empty `text` means *the extractor
+returned nothing*, which has two possible causes that the archive CSV cannot tell
+apart:
+
+- the post genuinely carried no text — an image, or a repost with no comment
+- the post had text and the extractor missed it
+
+What can be established: **all 3,749 empty rows have a status id, an archive URL,
+an original Truth Social URL and a parsed timestamp.** The page was fetched and
+parsed; only the body came back empty. So these are not network failures, and a
+network failure produces no row at all. That is a narrower statement than the one
+withdrawn above, and it is the one the data supports.
+
+**26.5% is therefore an upper bound on "posts with no text", containing an unknown
+number of extraction misses.** Resolving it would need a re-scrape with an
+extractor that distinguishes an absent body from an unmatched pattern — for
+instance by locating the post container in the DOM rather than by regex over
+flattened text. Whether that is worth doing is discussed in the appendix; it does
+not affect any conclusion, because §9.2 commits to no trading test on this source.
+
+Empty rows are excluded from the token and sentiment aggregates and carried as
+`truth_empty_post_count`. Scoring them instead would be quietly destructive: an
+empty string contributes zero positive and zero negative words, so a session of
+forty images would report a tone of exactly zero — indistinguishable from forty
+balanced posts, and driven entirely by how much the account posted pictures. That
+argument holds whichever of the two causes is behind any given empty row.
 
 ### Timezone: the part that would have broken the alignment
 
