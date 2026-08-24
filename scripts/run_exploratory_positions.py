@@ -89,10 +89,10 @@ def summarise(name, kind, w, r, fin, cash, cost_bps, base_net):
     active = w != 0
     row = {
         "id": name, "kind": kind, "cost_bps_per_side": cost_bps,
+        "n_active": int(active.sum()),
+        "active_rate": float(active.mean()),
         "ann_mean_excess": ann_mean(net.to_numpy()),
         "sharpe": sharpe(net.to_numpy()),
-        "n_active": int(active.sum()),
-        "participation": float(active.mean()),
         "mean_abs_position": float(w.abs().mean()),
         "terminal_wealth": float((1.0 + net + cash).prod()),
     }
@@ -145,15 +145,22 @@ def main() -> int:
 
     pd.set_option("display.width", 200, "display.max_columns", 20)
     show = out.copy()
-    for col in ("ann_mean_excess", "participation", "mean_abs_position"):
+    for col in ("ann_mean_excess", "active_rate", "mean_abs_position"):
         show[col] = (show[col] * 100).round(2)
     print(show.to_string(index=False, float_format=lambda v: f"{v:.3f}"))
     print(f"\nwritten to {dest.relative_to(ROOT)}")
     print("")
-    print("Every row above is reported and none of them replaces P1. Read n_active")
-    print("before reading sharpe: the highest ratio in this table rests on a few dozen")
-    print("non-zero sessions, which is precisely the configuration the confirmatory")
-    print("procedure was changed in v6 to stop selecting.")
+    print("Every row above is reported; none replaces P1 and none is promoted.")
+    print("")
+    lo, hi = out.n_active.min(), out.n_active.max()
+    print(f"These Sharpe ratios rest on between {lo} and {hi} active sessions, so they")
+    print("are not equally well determined and no single cutoff separates them. The")
+    print("sparsest rows, stated in full rather than flagged:")
+    for row in out.nsmallest(3, "n_active").itertuples():
+        interval = (f"  paired dSharpe vs P1 [{row.sharpe_diff_lo:+.3f}, "
+                    f"{row.sharpe_diff_hi:+.3f}]") if not pd.isna(row.sharpe_diff_lo) else ""
+        print(f"  {row.id:<24} {row.n_active:>5} active ({row.active_rate:.1%})"
+              f"  Sharpe {row.sharpe:+.3f}{interval}")
     return 0
 
 

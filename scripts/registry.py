@@ -11,7 +11,22 @@ as a failed experiment would be as inaccurate as leaving it out. It is recorded
 with `run_type=engineering_smoke` and `excluded_from_trial_budget=true`, so the
 distinction is in the file rather than in someone's memory.
 
+**A specification is not a strategy path.** E10 supplies three quantiles, E11 two
+volatility targets, E12 five cost levels and E12b three margins, so a registry
+keyed only on the E number would record four rows where thirteen out-of-sample
+return series were actually produced and looked at. Any descriptive multiple-testing
+statement has to use the number of realised paths, not the number of E numbers, or
+it understates its own N. Every path therefore carries a `subrun_id` alongside the
+`family_id` it belongs to.
+
+Three further flags exist because "pre-registered" is not one property. A
+specification can be fixed before the confirmatory run, or merely before its own
+results are seen — the second is much weaker than the first and still worth
+something, but only if the registry distinguishes them rather than letting a reader
+assume the stronger one.
+
     python scripts/registry.py --show
+    python scripts/registry.py --register-position-rules
 """
 
 from __future__ import annotations
@@ -28,6 +43,8 @@ REGISTRY = ROOT / "results" / "experiment_registry.csv"
 
 FIELDS = [
     "run_id",
+    "subrun_id",                     # one realised out-of-sample path
+    "family_id",                     # the specification it belongs to
     "date",
     "run_type",                      # confirmatory | exploratory | sensitivity | engineering_smoke
     "excluded_from_trial_budget",
@@ -44,6 +61,13 @@ FIELDS = [
     "oos_net_sharpe",
     "delta_sharpe_vs_always_long",
     "delta_annmean_vs_cash",
+    "active_sessions",
+    "active_rate",
+    # What "pre-registered" means for this row, stated in three separate parts
+    # rather than compressed into one word that would overstate the weakest case.
+    "specified_before_p1",           # fixed before the confirmatory run
+    "specified_before_own_results",  # fixed before this row's own returns were seen
+    "cannot_modify_p1_headline",     # always true for anything outside P1
     "notes",
 ]
 
@@ -69,7 +93,54 @@ def main() -> int:
     ap.add_argument("--show", action="store_true")
     ap.add_argument("--seed-smoke", action="store_true",
                     help="record the v5 engineering smoke run")
+    ap.add_argument("--register-position-rules", action="store_true",
+                    help="one row per realised path in exploratory_position_rules.csv")
     args = ap.parse_args()
+
+    if args.register_position_rules:
+        import pandas as pd
+        table = pd.read_csv(ROOT / "results" / "exploratory_position_rules.csv")
+        manifest = json.loads((ROOT / "results" / "run_manifest.json")
+                              .read_text(encoding="utf-8"))
+        n = 0
+        for row in table.itertuples():
+            if row.kind != "exploratory":
+                continue
+            family = row.id.split()[0]
+            append({
+                "run_id": f"{family}",
+                "subrun_id": row.id.replace(" ", "_"),
+                "family_id": family,
+                "date": date.today().isoformat(),
+                "run_type": "exploratory",
+                "excluded_from_trial_budget": "false",
+                "performance_metrics_computed": "true",
+                "protocol_version": "v6",
+                "config_sha256": manifest["config_sha256"],
+                "snapshot_sha256": manifest["snapshot_sha256"],
+                "code_commit": git_commit(),
+                "n_candidates": 0,
+                "delta_multiple": "n/a - trading rule only, no refit",
+                "training_window": "P1 frozen predictions",
+                "outer_steps": manifest["outer_steps"],
+                "oos_sessions": int(manifest["oos_sessions"]),
+                "oos_net_sharpe": round(float(row.sharpe), 6),
+                "delta_sharpe_vs_always_long": "",
+                "delta_annmean_vs_cash": round(float(row.ann_mean_excess), 6),
+                "active_sessions": int(row.n_active),
+                "active_rate": round(float(row.active_rate), 6),
+                "specified_before_p1": "true",
+                "specified_before_own_results": "true",
+                "cannot_modify_p1_headline": "true",
+                "notes": (
+                    "Position rule applied to P1's frozen mu_hat; no model was refitted "
+                    "and no new search was performed. One of several realised paths from "
+                    f"family {family}. Reported in full and not promoted."
+                ),
+            })
+            n += 1
+        print(f"registered {n} realised strategy paths")
+        return 0
 
     if args.seed_smoke:
         manifest = json.loads((ROOT / "results" / "smoke" / "run_manifest.json")

@@ -76,14 +76,100 @@ def test_c2c_carries_one_extra_session_of_feature_lag():
     assert CloseToClose().extra_feature_lag == 1
 
 
-def test_c2c_band_is_on_the_excess_over_the_risk_free_rate():
-    idx = _dates(3)
-    mu = pd.Series([3e-4, 3e-4, -3e-4], index=idx)
-    carry = pd.Series([0.0, 2e-4, 0.0], index=idx)
-    w = CloseToClose().positions(mu, cost_bps=2.0, carry=carry, delta=0.0)
-    assert w.iloc[0] == 1.0     # 3 bp edge clears a 2 bp entry
-    assert w.iloc[1] == 0.0     # 1 bp edge after the rate does not
-    assert w.iloc[2] == -1.0
+def test_c2c_edge_is_measured_over_the_risk_free_rate():
+    """A 3 bp raw prediction is a 1 bp edge once the bill it displaces is netted."""
+    idx = _dates(2)
+    spec = CloseToClose(borrow_annual_bps=0.0)
+    days = pd.Series(1.0, index=idx)
+    flat_entry = spec.positions(pd.Series([3e-4, 3e-4], index=idx), 2.0,
+                                pd.Series([2e-4, 2e-4], index=idx), calendar_days=days)
+    # 1 bp of edge does not pay for a 2 bp entry from flat.
+    assert flat_entry.iloc[0] == 0.0
+    clears = spec.positions(pd.Series([3e-4, 3e-4], index=idx), 2.0,
+                            pd.Series([0.0, 0.0], index=idx), calendar_days=days)
+    assert clears.iloc[0] == 1.0
+
+
+def test_c2c_holds_a_position_that_would_not_be_worth_opening():
+    """The whole reason a single threshold is the wrong shape here.
+
+    Day 1 opens a long on a 3 bp edge. Day 2's edge is only 1 bp, which would not
+    pay a 2 bp entry — but the position is already on, holding it costs nothing, and
+    going flat would cost 2 bp to give up a positive expectation. A fixed band
+    compares |mu_hat| to one number and exits; the one-step optimum holds.
+    """
+    idx = _dates(2)
+    spec = CloseToClose(borrow_annual_bps=0.0)
+    w = spec.positions(pd.Series([3e-4, 1e-4], index=idx), 2.0,
+                       pd.Series([0.0, 0.0], index=idx),
+                       calendar_days=pd.Series(1.0, index=idx))
+    assert list(w) == [1.0, 1.0]
+
+
+def test_c2c_never_exits_a_long_into_flat_when_borrow_is_free():
+    """A property of the rule that is not obvious and is worth pinning.
+
+    Holding a long against an adverse edge `e < 0` is worth `e`. Going flat costs
+    `c`. Reversing costs `2c` and earns `|e|`. Flat beats holding only when
+    `e < -c`, and reversing beats flat only when `|e| > c` -- the same condition.
+    So with no borrow charge, flat is dominated from a long position: the rule
+    either holds or goes all the way to short, never parks in between.
+
+    This is exactly what a single fixed threshold cannot express, and it is why the
+    first implementation of this rule was wrong rather than merely suboptimal.
+    """
+    idx = _dates(2)
+    spec = CloseToClose(borrow_annual_bps=0.0)
+    days = pd.Series(1.0, index=idx)
+    zero = pd.Series([0.0, 0.0], index=idx)
+
+    # A 1 bp adverse edge is cheaper to sit through than the 2 bp it costs to leave.
+    held = spec.positions(pd.Series([3e-4, -1e-4], index=idx), 2.0, zero, calendar_days=days)
+    assert list(held) == [1.0, 1.0]
+
+    # A 3 bp adverse edge clears c, and the rule goes straight to short.
+    flipped = spec.positions(pd.Series([3e-4, -3e-4], index=idx), 2.0, zero, calendar_days=days)
+    assert list(flipped) == [1.0, -1.0]
+
+    # Sweep it: from a long, with free borrow, flat is never chosen.
+    for bp in range(-20, 21):
+        w = spec.positions(pd.Series([3e-4, bp * 1e-5], index=idx), 2.0, zero,
+                           calendar_days=days)
+        assert w.iloc[1] != 0.0, f"flat was chosen from a long at edge {bp} x 1e-5"
+
+
+def test_c2c_borrow_restores_flat_as_a_choice():
+    """Charge the short and the middle option stops being dominated."""
+    idx = _dates(2)
+    days = pd.Series(1.0, index=idx)
+    zero = pd.Series([0.0, 0.0], index=idx)
+    spec = CloseToClose(borrow_annual_bps=2000.0)
+    w = spec.positions(pd.Series([3e-4, -2.2e-4], index=idx), 2.0, zero, calendar_days=days)
+    assert list(w) == [1.0, 0.0]
+
+
+def test_c2c_rule_refuses_a_safety_margin():
+    """delta is not a parameter of this rule and must not be silently ignored."""
+    idx = _dates(2)
+    with pytest.raises(ValueError, match="no safety margin"):
+        CloseToClose().positions(pd.Series([1.0, 1.0], index=idx), 2.0,
+                                 pd.Series([0.0, 0.0], index=idx), delta=1.0)
+
+
+def test_c2c_borrow_makes_a_short_harder_to_justify_than_a_long():
+    idx = _dates(2)
+    days = pd.Series([3.0, 1.0], index=idx)          # opened into a weekend
+    zero = pd.Series([0.0, 0.0], index=idx)
+    edge = 2.1e-4
+    charged = CloseToClose(borrow_annual_bps=500.0)
+    free = CloseToClose(borrow_annual_bps=0.0)
+    assert free.positions(pd.Series([-edge, 0.0], index=idx), 2.0, zero,
+                          calendar_days=days).iloc[0] == -1.0
+    assert charged.positions(pd.Series([-edge, 0.0], index=idx), 2.0, zero,
+                             calendar_days=days).iloc[0] == 0.0
+    # The same edge on the long side is unaffected by borrow.
+    assert charged.positions(pd.Series([edge, 0.0], index=idx), 2.0, zero,
+                             calendar_days=days).iloc[0] == 1.0
 
 
 def test_targets_are_the_next_session_and_differ_from_each_other():
