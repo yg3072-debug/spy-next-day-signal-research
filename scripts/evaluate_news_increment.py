@@ -7,10 +7,18 @@ two arms attributable to the feature set rather than to the window.
 
 Three things this reports that a simpler script would not.
 
-**The placebo arms and the control arms are labelled differently**, because they
-answer different questions. A positive shift feeds the model stale news and asks
-whether an improvement survives it; a negative shift feeds the model news from the
-future and asks whether the procedure could detect such an improvement at all.
+**The placebo arms and the leakage stress tests are labelled differently**, because
+they answer different questions. A positive shift feeds the model stale news and
+asks whether an improvement survives it; a negative shift feeds the model news from
+the future and asks whether a deliberate leak of that kind produces a positive
+result.
+
+A negative shift is deliberately **not** called a positive control. A positive
+control injects a variable known by construction to carry the answer, to show the
+pipeline can find a strong signal when one is there. Future headlines are not
+that -- they are real text that happens to be unavailable, with no guarantee of
+predicting tomorrow either. This study has no genuine positive control, and that
+is a gap rather than something these arms cover.
 
 **The number of realised strategy paths is printed**, not the number of
 specifications, because that is the count any multiple-testing statement has to
@@ -46,7 +54,7 @@ KIND = {"N0": "control arm — market features only",
         "N1": "treatment arm — market + news, true alignment"}
 for k in (5, 10, 20, 60):
     KIND[f"N1p{k}"] = f"placebo — news from t−{k}, stale but legitimate"
-    KIND[f"N1m{k}"] = f"positive control — news from t+{k}, information it could not have had"
+    KIND[f"N1m{k}"] = f"leakage stress test — news from t+{k}, unavailable information"
 
 
 def load(aid: str):
@@ -114,10 +122,11 @@ def main() -> int:
               f"{crosses} of {len(treated)} intervals against N0 include zero.")
         controls = treated[treated.id.str.contains("m")]
         if not controls.empty:
-            print("\nRead the positive controls first. They were given news from the "
-                  "future;\nif they do not separate from N0 either, then a null at the "
-                  "true alignment\nis a statement about this procedure's sensitivity as "
-                  "much as about the data.")
+            print("\nThe N1m arms were given news from the future. They are leakage stress")
+            print("tests, not positive controls: future headlines are not guaranteed to")
+            print("predict tomorrow either, so their failure to help does not establish")
+            print("that the pipeline cannot use informative text. It establishes only that")
+            print("these particular future shifts did not produce a positive result.")
     return 0
 
 

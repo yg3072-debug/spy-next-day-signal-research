@@ -301,6 +301,35 @@ def crossfit_out_of_fold(
     return pd.concat(chunks), pd.concat(targets)
 
 
+def multiclass_brier(proba: pd.DataFrame, y: pd.Series) -> float:
+    """Mean squared error of the predicted distribution against the realised class.
+
+    Summed over classes, so the scale is 0 to 2 and a three-class uniform forecast
+    scores 2/3.
+    """
+    if len(y) == 0:
+        return float("nan")
+    onehot = pd.DataFrame(0.0, index=proba.index, columns=CLASSES)
+    for c in CLASSES:
+        onehot.loc[np.asarray(y) == c, c] = 1.0
+    return float(((proba[CLASSES].to_numpy() - onehot.to_numpy()) ** 2).sum(axis=1).mean())
+
+
+def brier_skill(proba: pd.DataFrame, y: pd.Series, reference_rate: pd.Series) -> float:
+    """Brier skill against a fixed reference forecast, usually the training base rate.
+
+    Positive means better than always predicting the training class frequencies.
+    The reference must come from training data: scoring against the realised
+    frequencies of the very sample being scored would flatter every model.
+    """
+    if len(y) == 0:
+        return float("nan")
+    ref = pd.DataFrame([reference_rate[CLASSES].to_numpy()] * len(y),
+                       index=proba.index, columns=CLASSES)
+    base = multiclass_brier(ref, y)
+    return float("nan") if base == 0 else 1.0 - multiclass_brier(proba, y) / base
+
+
 def calibration_is_viable(y_oof: pd.Series, min_total: int, min_per_class: int) -> bool:
     if len(y_oof) < min_total:
         return False

@@ -1,0 +1,83 @@
+{
+  "columns_differing": [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "QQQ_Close",
+    "IWM_Close",
+    "DIA_Close",
+    "DGS3MO",
+    "DTB3",
+    "DGS2",
+    "DGS10"
+  ],
+  "detail": [
+    {
+      "column": "Open",
+      "cells": 2156,
+      "max_abs": 0.00021359999999503998,
+      "max_rel": 7.954469690645452e-07
+    },
+    {
+      "column": "High",
+      "cells": 2156,
+      "max_abs": 0.00021390000000565124,
+      "max_rel": 7.954378096546646e-07
+    },
+    {
+      "column": "Low",
+      "cells": 2156,
+      "max_abs": 0.000212900000008176,
+      "max_rel": 7.955988269825022e-07
+    },
+    {
+      "column": "Close",
+      "cells": 2156,
+      "max_abs": 0.00021370000001752487,
+      "max_rel": 7.950176615754561e-07
+    },
+    {
+      "column": "QQQ_Close",
+      "cells": 2143,
+      "max_abs": 0.00015260000003536334,
+      "max_rel": 7.927218657988233e-07
+    },
+    {
+      "column": "IWM_Close",
+      "cells": 2057,
+      "max_abs": 0.00010679999999751999,
+      "max_rel": 8.260628771597838e-07
+    },
+    {
+      "column": "DIA_Close",
+      "cells": 2469,
+      "max_abs": 0.0002441999999973632,
+      "max_rel": 1.3116274762359495e-06
+    },
+    {
+      "column": "DGS3MO",
+      "cells": 1,
+      "max_abs": 0.009999999999999787,
+      "max_rel": 0.0025839793281653197
+    },
+    {
+      "column": "DTB3",
+      "cells": 1,
+      "max_abs": 0.010000000000000231,
+      "max_rel": 0.0026954177897574746
+    },
+    {
+      "column": "DGS2",
+      "cells": 1,
+      "max_abs": 0.04999999999999982,
+      "max_rel": 0.011933174224343632
+    },
+    {
+      "column": "DGS10",
+      "cells": 1,
+      "max_abs": 0.04999999999999982,
+      "max_rel": 0.010660980810234503
+    }
+  ]
+}

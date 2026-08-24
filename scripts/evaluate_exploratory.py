@@ -157,13 +157,14 @@ def main() -> int:
         print("  pooling a spread across two different windows compares unlike quantities.")
         print(f"  spread of path Sharpe ratios, sd   {spread:+.3f}")
         print(f"  best observed                      {best:+.3f}")
-        print(f"  E[max] from noise alone at N={len(paths)}       {reference:+.3f}")
+        print(f"  independence-based E[max] at N={len(paths)}  {reference:+.3f}")
         print("")
-        verdict = "below" if best < reference else "above"
-        print(f"  The best path is {verdict} what {len(paths)} draws of pure noise with this")
-        print("  spread would be expected to produce. Descriptive, not a test: it adjusts")
-        print("  no interval, and it assumes independence that these paths do not have.")
-        print("  It is here so the largest number in the table is read next to something.")
+        print(f"  The observed best is {best:+.3f} against an independence-based expected")
+        print(f"  maximum of {reference:+.3f}. This is a statement of SCALE, not a test. The",)
+        print("  paths are strongly correlated -- many share a training window, a feature")
+        print("  screen and most of their positions -- so they are nowhere near independent")
+        print("  draws, and the expression assumes exactly the independence they lack. It")
+        print("  adjusts no interval and licenses no claim that the best row is noise.")
     return 0
 
 

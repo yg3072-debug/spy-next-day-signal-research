@@ -1,0 +1,19 @@
+# E21 - data vintage: a second download of the same window
+#
+# Pre-registered in protocol section 7.2 and omitted when the exploratory overlays
+# were first written; that omission is recorded in the registry rather than
+# corrected silently. This overlay runs the identical procedure against a snapshot
+# downloaded later, to test whether the result survives the vendors revising the
+# history they serve.
+#
+# The frozen snapshot is not touched. The second vintage lives in its own
+# directory with its own SHA-256, and the two are compared field by field in
+# results/e21_vintage_diff.json before this runs. The comparison does not gate the
+# run: it happens either way, as pre-registered.
+
+meta:
+  id: E21
+  role: exploratory
+
+sample:
+  snapshot_dir: data/vintage_e21

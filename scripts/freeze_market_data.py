@@ -249,6 +249,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--verify", action="store_true", help="check existing snapshots and exit")
     parser.add_argument("--end", default=None, help="end date (exclusive), defaults to today")
+    parser.add_argument("--outdir", default=None,
+                        help="write elsewhere than data/; E21 uses this so a second "
+                             "vintage cannot overwrite the frozen snapshot")
     args = parser.parse_args()
 
     if args.verify:
@@ -256,7 +259,10 @@ def main() -> int:
 
     end = args.end or (pd.Timestamp.today().normalize() + pd.Timedelta(days=1)).date().isoformat()
     frame, meta = build_snapshot(START_DATE, end)
-    csv_path, manifest_path = write_snapshot(frame, meta, SNAPSHOT_DIR)
+    outdir = (SNAPSHOT_DIR.parent / args.outdir) if args.outdir else SNAPSHOT_DIR
+    if outdir.resolve() == SNAPSHOT_DIR.resolve() and args.outdir:
+        raise SystemExit("refusing to write a second vintage into the frozen snapshot directory")
+    csv_path, manifest_path = write_snapshot(frame, meta, outdir)
 
     print(f"Sessions      {len(frame)}  ({frame.index.min().date()} to {frame.index.max().date()})")
     print(f"Half days     {int(frame['is_half_day'].sum())}")

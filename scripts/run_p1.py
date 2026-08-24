@@ -35,7 +35,8 @@ sys.path.insert(0, str(ROOT))
 
 from src.features import build_features, build_target  # noqa: E402
 from src.pipeline import (  # noqa: E402
-    CLASSES, apply_labels, calibration_is_viable, get_calibrator,
+    CLASSES, apply_labels, brier_skill, calibration_is_viable, get_calibrator,
+    multiclass_brier,
     class_conditional_means, crossfit_out_of_fold, estimate_quantiles,
     expected_return, fit_and_predict_proba, make_estimator, select_features,
     vol_adjusted_target,
@@ -130,7 +131,7 @@ def net_returns(mu, realised, carry, cost_bps, delta, spec=None):
 
 def fit_slice(
     X_train, z_train, target_log_train, returns_train, X_pred,
-    cfg, groups, seed, only=None, also_predict_train=False,
+    cfg, groups, seed, only=None, also_predict_train=False, calibration_log=None,
 ):
     """Everything a slice is allowed to learn, learned from that slice alone.
 
@@ -171,6 +172,33 @@ def fit_slice(
         calibrator = get_calibrator(cfg["calibration"]["method"]).fit(oof_proba, oof_y) \
             if viable else None
 
+        # The calibration diagnostics config/p1.yaml requires. The out-of-fold
+        # probabilities are genuinely out-of-sample for the base estimator, so the
+        # "before" Brier is an honest number.
+        #
+        # The "after" is not, and is labelled accordingly: the calibrator was fitted
+        # on exactly these points, so applying it back to them is in-sample for the
+        # calibrator and will flatter it. Reporting the pair without that label
+        # would be the more comfortable choice and the wrong one. The genuinely
+        # out-of-sample calibration evidence is the outer-OOS reliability curve,
+        # which is built from results/oos_predictions.csv rather than from here.
+        if calibration_log is not None and len(oof_y):
+            base_rate = pd.Series(
+                {c: float((np.asarray(y_train) == c).mean()) for c in CLASSES})
+            after = calibrator.transform(oof_proba) if calibrator else oof_proba
+            calibration_log.append({
+                "family": candidate["family"], "params": repr(candidate["params"]),
+                "n_oof": int(len(oof_y)),
+                "calibration_skipped": not viable,
+                "inner_oos_brier": multiclass_brier(oof_proba, oof_y),
+                "inner_oos_brier_skill_vs_train_base_rate":
+                    brier_skill(oof_proba, oof_y, base_rate),
+                "brier_before_calibration": multiclass_brier(oof_proba, oof_y),
+                "brier_after_calibration_in_sample_for_calibrator":
+                    multiclass_brier(after, oof_y),
+                **{f"base_rate_{c}": base_rate[c] for c in CLASSES},
+            })
+
         estimator = build()
         raw = fit_and_predict_proba(estimator, Xt, y_train, Xp)
         proba = calibrator.transform(raw) if calibrator else raw
@@ -178,6 +206,7 @@ def fit_slice(
         entry = {
             "mu_hat": expected_return(proba, means),
             "proba": proba,
+            "proba_raw": raw,
             "calibration_skipped": not viable,
         }
         if also_predict_train:
@@ -306,7 +335,7 @@ def main() -> int:
     if cfg["meta"]["execution_specification"] == "alternative_close_to_close":
         spec_kwargs["borrow_annual_bps"] = float(cfg["costs"]["borrow_annual_bps"])
     spec = get_spec(cfg["meta"]["execution_specification"], **spec_kwargs)
-    snapshot, manifest = load_snapshot()
+    snapshot, manifest = load_snapshot(cfg["sample"].get("snapshot_dir"))
 
     # E20 substitutes the oil factor at the snapshot, so every downstream feature
     # name is unchanged and the two runs stay comparable. The substitution is not
@@ -452,7 +481,7 @@ def main() -> int:
     print()
 
     frozen, oos_rows, selection_log, stability = None, [], [], []
-    candidate_diagnostics = []
+    candidate_diagnostics, calibration_rows, outer_calibration = [], [], []
     t0 = time.perf_counter()
 
     for step_i, start in enumerate(starts):
@@ -467,13 +496,18 @@ def main() -> int:
             inner: dict[tuple, list] = {}
             fold_train: dict[tuple, list] = {}
             cost = cfg["selection"]["metric_cost_bps_per_side"]
-            for tr, va in inner_splitter.split(Xtr):
+            for fold_i, (tr, va) in enumerate(inner_splitter.split(Xtr)):
                 itr, iva = train_idx[tr], train_idx[va]
+                fold_cal: list[dict] = []
                 fold = fit_slice(
                     features_all.loc[itr], z_all.loc[itr], target_log.loc[itr],
                     target_simple.loc[itr], features_all.loc[iva],
                     cfg, groups, seed + step_i, also_predict_train=True,
+                    calibration_log=fold_cal,
                 )
+                for row in fold_cal:
+                    calibration_rows.append({"step": step_i, "inner_fold": fold_i,
+                                             "date": str(train_idx[-1].date()), **row})
                 if fold is None:
                     continue
                 for key, res in fold["predictions"].items():
@@ -550,6 +584,25 @@ def main() -> int:
         for f in fitted["features"]:
             stability.append({"step": step_i, "feature": f})
 
+        # Outer-validation probabilities before and after calibration, with the
+        # label the outer-train quantiles imply. This is the only calibration
+        # evidence in the study that is out-of-sample for the calibrator as well as
+        # for the model, which is what makes "did calibrating help?" answerable.
+        q_low, q_high = fitted["quantiles"]
+        z_val = z_all.loc[mu.index]
+        y_val = apply_labels(z_val, q_low, q_high)
+        for date in mu.index:
+            outer_calibration.append({
+                "date": date, "step": step_i, "label": int(y_val.loc[date]),
+                "raw_short": res["proba_raw"].loc[date, -1],
+                "raw_flat": res["proba_raw"].loc[date, 0],
+                "raw_long": res["proba_raw"].loc[date, 1],
+                "cal_short": res["proba"].loc[date, -1],
+                "cal_flat": res["proba"].loc[date, 0],
+                "cal_long": res["proba"].loc[date, 1],
+                "calibration_skipped": res["calibration_skipped"],
+            })
+
     elapsed = time.perf_counter() - t0
     oos = pd.DataFrame(oos_rows).set_index("date")
     oos.to_csv(outdir / "oos_predictions.csv", float_format="%.10g")
@@ -559,6 +612,14 @@ def main() -> int:
     if candidate_diagnostics:
         pd.concat(candidate_diagnostics).to_csv(
             outdir / "candidate_diagnostics.csv", index=False, float_format="%.8g"
+        )
+    if calibration_rows:
+        pd.DataFrame(calibration_rows).to_csv(
+            outdir / "calibration_diagnostics.csv", index=False, float_format="%.8g"
+        )
+    if outer_calibration:
+        pd.DataFrame(outer_calibration).set_index("date").to_csv(
+            outdir / "outer_calibration.csv", float_format="%.10g"
         )
 
     (outdir / "run_manifest.json").write_text(json.dumps({
@@ -588,6 +649,10 @@ def main() -> int:
         print(f"  candidate_diagnostics {nd} rows ({len(candidate_diagnostics)} retunes"
               f" x {len(candidate_diagnostics[0])} candidates)")
     print(f"  feature_stability.csv {len(stab)} distinct features selected")
+    if calibration_rows:
+        print(f"  calibration_diagnostics {len(calibration_rows)} rows "
+              f"({len(set(r['step'] for r in calibration_rows))} retunes"
+              f" x {cfg['inner_cv']['n_splits']} inner folds x candidates)")
     print(f"  run_manifest.json     written")
     if args.smoke:
         print("\nNo performance figure is reported in smoke mode, by design.")
