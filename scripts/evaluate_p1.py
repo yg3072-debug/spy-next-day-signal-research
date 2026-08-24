@@ -132,10 +132,15 @@ def main() -> int:
                   "fraction_le_zero": np.nan, "se": np.nan}
         jk = {"p_two_sided": np.nan, "correlation": np.nan}
 
-    # decomposition, the three terms reported apart
+    # The decomposition, reported as three terms with their own uncertainty.
+    # Condition A tests a difference of Sharpe ratios; the terms below are mean
+    # returns. Using A's interval to say anything about them would be substituting
+    # one statistic for another, so each gets its own paired interval.
     timing = (w - 1.0) * realised
     cost_saving = 2 * c * (1.0 - w.abs())
     fin_saving = fin_all * (1.0 - w.abs())
+    mean_diff = bootstrap_difference(net, al_net, ann_mean, args.block, args.reps)
+    timing_boot = bootstrap_statistic(timing, ann_mean, args.block, args.reps)
 
     # ------------------------------------------------------- Condition B
     cond_b = bootstrap_difference(net, cash_net, ann_mean, args.block, args.reps)
@@ -223,7 +228,13 @@ def main() -> int:
         "condition_b_ci_high": cond_b["ci_high"],
         "condition_b_bootstrap_fraction_le_zero": cond_b["fraction_le_zero"],
         "condition_b_passes": bool(passes_b),
+        "ann_mean_diff_vs_always_long": mean_diff["point"],
+        "ann_mean_diff_ci_low": mean_diff["ci_low"],
+        "ann_mean_diff_ci_high": mean_diff["ci_high"],
+        "ann_mean_diff_bootstrap_fraction_le_zero": mean_diff["fraction_le_zero"],
         "ann_gross_timing": float(timing.mean() * TRADING_DAYS),
+        "ann_gross_timing_ci_low": timing_boot["ci_low"],
+        "ann_gross_timing_ci_high": timing_boot["ci_high"],
         "ann_cost_saving": float(cost_saving.mean() * TRADING_DAYS),
         "ann_financing_saving": float(fin_saving.mean() * TRADING_DAYS),
         "brier_score": bs, "brier_reference": bs_ref, "brier_skill": brier_skill,
@@ -256,11 +267,15 @@ def main() -> int:
     print()
     print(f"VERDICT  {verdict}")
     print()
-    print("decomposition of the excess over always-long")
-    print(f"  gross timing      {pct(tests['ann_gross_timing'])}"
-          "   <- the only term that is evidence of prediction")
+    print("decomposition of the mean-return excess over always-long")
+    print(f"  gross positioning {pct(tests['ann_gross_timing'])}"
+          f"  [{timing_boot['ci_low']:+.2%}, {timing_boot['ci_high']:+.2%}]"
+          "   <- the only term bearing on prediction")
     print(f"  cost saving       {pct(tests['ann_cost_saving'])}")
     print(f"  financing saving  {pct(tests['ann_financing_saving'])}")
+    print(f"  net               {pct(mean_diff['point'])}"
+          f"  [{mean_diff['ci_low']:+.2%}, {mean_diff['ci_high']:+.2%}]"
+          "   <- its own statistic, not Condition A")
     print()
     print("predictive evidence, independent of P&L")
     print(f"  Brier skill vs training base rate  {brier_skill:+.4f}")

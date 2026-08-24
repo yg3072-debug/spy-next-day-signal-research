@@ -34,36 +34,41 @@ likely one.** It is reported as such, without a second search.
 **Neither pass condition is met: insufficient evidence of a stable incremental value.** Over
 1,865 out-of-sample sessions the Sharpe difference against always-long open-to-close is +0.164
 with a paired bootstrap lower bound of −0.519, and the annualised mean excess over cash is
-−1.32% with a lower bound of −7.32%.
+−1.32% with a lower bound of −7.32%. Annualised means and Sharpe ratios are stated in excess of
+cash; CAGR, terminal wealth and drawdown come from total returns including the cash leg.
 
 The verdict is not the interesting part. This is:
 
 ```
-excess over always-long, decomposed
+mean-return excess over always-long, decomposed     annualised, paired intervals
 
-    gross timing        −3.97%   ← the only term that is evidence of prediction
+    gross positioning   −3.97%   [−11.51%, +3.58%]  ← the only term bearing on prediction
     cost saving         +6.73%
     financing saving    +0.34%
-    ────────────────────────────
-    net                 +3.10%   and not distinguishable from zero
+    ──────────────────────────────────────────────
+    net                 +3.11%   [ −4.45%, +10.55%]
 ```
 
-**Every part of the point estimate comes from trading less, and the term that would constitute
-predictive ability is negative.** Two quantities computed without touching the P&L show no
-detectable skill in either direction: a Brier skill of +0.012 against a training-base-rate
-reference, and a regression slope of realised on predicted return of −0.085 with an interval of
-[−1.005, +0.891] — a negative point estimate inside an interval far too wide to read as
-anti-prediction. The verdict holds at block lengths 20, 10 and 5.
+**The entire positive point estimate over always-long comes from saving execution cost and
+financing; the realised gross positioning contribution is −3.97%.** Both intervals span zero, so
+neither number establishes anything about true ability in either direction — and the net figure
+is a difference of *mean returns*, a separate statistic from Condition A's difference of *Sharpe
+ratios*. Two diagnostics computed without touching the P&L give no compelling corroborating
+evidence of skill: a Brier skill of +0.0122 against a training-base-rate reference, for which no
+interval was pre-specified, and a regression slope of realised on predicted return of −0.085
+with an interval of [−1.005, +0.891] — far too wide to read as anti-prediction. The verdict
+holds at block lengths 20, 10 and 5.
 
 The protocol fixed the wording for this case before the run. Where a net excess is significant
-but the timing term is not, the available conclusion is that a cost-aware participation filter
-beats forced daily trading, not that a signal was found. Here even that is unavailable, because
-the interval spans zero.
+but the positioning term is not, the available conclusion is that a cost-aware participation
+filter beats forced daily trading, not that a signal was found. Here even that is unavailable.
 
-What this does **not** license is a claim that no such signal exists. Section 0.1 states in
-advance that a true Sharpe of roughly 1.09 would be needed for 80% power on this sample. An
-effect of the size these strategies plausibly have would not have been detected. "Not
-supported" and "does not exist" are different findings, and only the first is in evidence.
+What this does **not** license is a claim that no such signal exists. The finding is that P1 did
+not provide evidence of stable incremental value under the frozen specification, in this sample,
+at this cost level. Section 0.1 states in advance that a true Sharpe of roughly 1.09 would be
+needed for 80% power here, so this sample cannot separate "small or no true effect" from "a true
+effect it lacks the power to see". "Not supported" and "does not exist" are different findings,
+and only the first is in evidence.
 
 ---
 
@@ -107,9 +112,9 @@ The protocol states in advance that this study cannot confirm a moderate signal,
 what that limitation looks like in practice.
 
 **A strategy that never trades beats always-long by 4.23% a year** at the base cost, entirely
-through not paying costs, with a strictly negative timing contribution. That is why the pass
-conditions are two — a relative one and an absolute one — and why any excess must be reported
-split into a timing term and a cost-saving term. Beating a loss-making benchmark by trading
+through not paying costs, with a strictly negative gross positioning contribution. That is why
+the pass conditions are two — a relative one and an absolute one — and why any excess must be
+reported split into a positioning term and a cost-saving term. Beating a loss-making benchmark by trading
 less is not a signal, and the protocol will not let it be written up as one.
 
 ---
@@ -146,7 +151,7 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**49 tests** run on every commit.
+**54 tests** run on every commit.
 
 ---
 
@@ -162,7 +167,7 @@ docs/       research_protocol.md   the frozen protocol
 results/    benchmark_comparison.csv, benchmark_intervals.csv
 scripts/    freeze_market_data.py, build_benchmarks.py, build_docs.py
 src/        features.py, stats.py, strategy.py
-tests/      38 checks
+tests/      54 checks
 ```
 
 ---

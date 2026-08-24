@@ -3,7 +3,11 @@
 **Protocol v6, configuration `c219757b…`, snapshot `9b337ca7…`. One run, 2026-08-24.**
 
 Out-of-sample: 1,865 NYSE sessions, 2019-03-21 to 2026-08-20 (7.4 years). Costs are 2 bp per
-side, 4 bp round trip, plus intraday financing. All returns are stated in excess of cash.
+side, 4 bp round trip, plus intraday financing.
+
+**Units.** Annualised mean returns and Sharpe ratios are stated in excess of cash. CAGR,
+terminal wealth and drawdown are computed from total portfolio returns including the cash leg.
+The two are not interchangeable and are not mixed within a row.
 
 ---
 
@@ -20,22 +24,27 @@ incremental value.**
 The verdict is not the substantive result. This is:
 
 ```
-excess over always-long, decomposed
+mean-return excess over always-long, decomposed        annualised, with paired intervals
 
-    gross timing        −3.97%   ← the only term that is evidence of prediction
-    cost saving         +6.73%
-    financing saving    +0.34%
-    ────────────────────────────
-    net                 +3.10%   and not distinguishable from zero
+    gross positioning     −3.97%   [−11.51%, +3.58%]   ← the only term bearing on prediction
+    cost saving           +6.73%
+    financing saving      +0.34%
+    ──────────────────────────────────────────────────
+    net                   +3.11%   [ −4.45%, +10.55%]
 ```
 
-**Every part of the point estimate comes from trading less, and the term that would constitute
-predictive ability is negative.** Two quantities computed without reference to the P&L show no
-skill in either direction: a Brier skill score of **+0.012** against a training-base-rate
-reference, and a regression slope of realised return on predicted return of **−0.085 with a 95%
-interval of [−1.005, +0.891]**. The slope's point estimate is negative but its interval spans
-zero so widely that it is evidence of nothing; the honest reading of both measures is that no
-predictive ability is detectable.
+**The entire positive point estimate over always-long comes from saving execution cost and
+financing; the realised gross positioning contribution is −3.97%.** Its interval spans zero, so
+what is established is that the realised value is negative, not that true positioning ability
+is. The net difference of +3.11% has an interval that also spans zero — and note that this is
+its own statistic. Condition A tests a difference of *Sharpe ratios*; +3.11% is a difference of
+*mean returns*, and A's interval says nothing about it.
+
+Two diagnostics computed without reference to the P&L: a Brier skill score of **+0.0122**
+against a training-base-rate reference, for which no uncertainty interval was pre-specified, and
+a regression slope of realised on predicted return of **−0.085, interval [−1.005, +0.891]**,
+which is highly imprecise and includes zero. Together these provide no compelling corroborating
+evidence of stable predictive skill.
 
 ---
 
@@ -59,9 +68,9 @@ one to use, because a comparison has to be on identical rows.
 
 Two readings that need no statistics.
 
-**P1 turned one dollar into 1.086 over 7.4 years. Cash turned it into 1.235.** The procedure
-underperformed a Treasury bill by 12.4 percentage points cumulatively while carrying a 17.6%
-drawdown.
+**P1 turned one dollar into 1.086 over 7.4 years. Cash turned it into 1.235.** Every dollar
+committed ended about **0.149 lower** — 14.9 percentage points of cumulative wealth, or a final
+wealth about **12.1% below** simply holding Treasury bills — while carrying a 17.6% drawdown.
 
 **The exposure-matched line is the sharper comparison.** P1 held an average net exposure of
 +0.221. A constant 0.221 position in the same intraday segment, with no model at all, returned
@@ -80,24 +89,29 @@ The excess of any strategy over always-long decomposes exactly:
 R_strategy − R_always-long  =  (w − 1)·R^O2C  +  2c·(1 − |w|)  +  f·(1 − |w|)
 ```
 
-Only the first term reflects the direction calls. The other two accrue to anything that trades
-less than always. P1 was flat on 66.8% of sessions, so it avoided a great deal of cost:
+Only the first term bears on prediction, and it is worth naming precisely: `(w − 1)·R` covers
+not only which direction was called but also **when the procedure chose to stand aside**, since
+a flat session contributes `−R`. It is a gross positioning contribution, not a direction-call
+contribution. The other two terms accrue to anything that trades less than always. P1 was flat
+on 66.8% of sessions, so it avoided a great deal of cost:
 
-| Term | Annualised |
-|---|---:|
-| Gross timing | **−3.97%** |
-| Cost saving | +6.73% |
-| Financing saving | +0.34% |
-| **Net over always-long** | **+3.10%** |
+| Term | Annualised | 95% paired interval |
+|---|---:|---:|
+| Gross positioning | **−3.97%** | [−11.51%, +3.58%] |
+| Cost saving | +6.73% | — |
+| Financing saving | +0.34% | — |
+| **Net over always-long** | **+3.11%** | [−4.45%, +10.55%] |
 
 Section 5.4 of the protocol fixes the language for this case in advance. Where the net excess is
-significant but the timing term is not, the conclusion available is that a cost-aware
+significant but the positioning term is not, the conclusion available is that a cost-aware
 participation filter beats forced daily trading — not that a directional signal was found.
 
-**Here even that is unavailable**, because Condition A's interval spans zero. What can be said
-is narrower: the point estimate of P1's advantage over always-long is entirely attributable to
-not trading, the direction calls lost 3.97% a year gross, and the whole comparison is
-statistically indistinguishable from zero either way.
+**Here even that is unavailable.** P1 did not meet the pre-specified Sharpe-difference threshold,
+and the mean-return difference of +3.11% carries an interval from −4.45% to +10.55%. What can be
+said, and no more: the entire positive point estimate of P1's advantage over always-long is
+attributable to saving cost and financing, and the realised gross positioning contribution was
+−3.97%. Neither statement is a claim about true positioning ability, whose interval spans zero
+in both directions.
 
 ---
 
@@ -110,15 +124,17 @@ An advantage in P&L can come from saving cost. These two quantities cannot.
 | Multi-class Brier skill vs training base rate | **+0.0122** | — | Essentially nil |
 | Regression slope of realised return on `mu_hat` | **−0.085** | [−1.005, +0.891] | Indistinguishable from zero |
 
-A model with genuine discriminating power would show a positive Brier skill and a positive
-slope with an interval clear of zero. Neither appears.
+The Brier skill is a small positive point estimate, and **no uncertainty interval for it was
+pre-specified**, so it is not by itself grounds for concluding that skill is absent. The slope is
+highly imprecise and includes zero. Together the two provide **no compelling corroborating
+evidence of stable predictive skill** — which is a weaker and more accurate statement than
+either "no skill" or "negative skill".
 
-The slope deserves a caution against over-reading it in the other direction too. Its point
-estimate is negative, which would suggest predictions running the wrong way, but the paired
-bootstrap interval runs from −1.005 to +0.891. **A negative point estimate inside an interval
-that wide is not evidence of anything**, and reporting it as though the model were reliably
-anti-predictive would be the same error as reporting a positive one as alpha. What the two
-measures jointly support is the absence of detectable skill, not its negative.
+The slope in particular deserves a caution in both directions. Its point estimate is negative,
+which would suggest predictions running the wrong way, but the interval runs from −1.005 to
++0.891. **A negative point estimate inside an interval that wide is not evidence of anything**,
+and reporting it as though the model were reliably anti-predictive would be the same error as
+reporting a positive one as alpha.
 
 ---
 
@@ -176,24 +192,36 @@ information: no family was persistently better than the others.
 | 84 | 2026-03-26 | logistic, C = 0.01 | 6/23 | 0 |
 
 **The majority baseline — a model that predicts the class prior and nothing else — was selected
-at three of eight reselections.** The one-standard-error rule selects it when nothing is more
-than one standard error clear of predicting the base rate, which is a direct statement that no
-candidate distinguished itself.
+at three of eight reselections.** The one-standard-error rule prefers the simplest candidate
+within one standard error of the best inner score, so this says that under the pre-specified
+rule, more complex models did not earn enough selection advantage to displace predicting the
+base rate. It is a statement about the selection rule's verdict, not a significance test, and it
+is not the same as proving those models statistically indistinguishable from the baseline.
 
 Appendix A.4.1 of the protocol notes in advance what those steps mean for the positions, and
 2019 against 2020 is the clearest illustration. In both, the baseline was selected, so `mu_hat`
 was a per-step constant. In 2019 it never cleared the cost band and participation was **0%**. In
-2020, short rates collapsed, the financing term went to nearly zero, the band narrowed, and the
-same constant cleared it on **60%** of sessions — contributing −1.4% for the year. **That
-exposure was a function of the rate environment, not of any prediction**, and it is flagged in
-`selection_log.csv` rather than presented as a strategy result.
+2020 the same kind of constant cleared it on **60%** of sessions, contributing −1.4% for the
+year.
+
+Two things moved between those two refits, and it is worth being precise about which mattered.
+The baseline's constant `mu_hat` rose from 2.78e-4 to 5.17e-4, up about 90%, because the 2020
+refit's training window carried a higher unconditional drift. Short rates collapsed over the
+same period, but the threshold narrowed only from 4.116e-4 to 4.006e-4, about 3%, because the
+band is dominated by the 4 bp execution round trip and financing is the small part of it. **The
+crossing arose jointly from the unconditional drift estimate and a lower financing threshold,
+with the drift estimate accounting for nearly all of the movement — and from neither is any
+feature discrimination involved.** It is flagged in `selection_log.csv` rather than presented as
+a strategy result.
 
 The feature layer was more stable than the model layer. Of 81 candidates, 45 were selected at
 least once and **15 were selected in at least 80 of 89 steps**; nine appeared in all 89:
 `vix_regime_low`, `vix_regime_high`, `YC_2Y10Y_z_60`, `Volatility_60`, `TNX_z_60`,
-`high_low_range`, `intraday_ret`, `volume_z_20`, `SMA_gap_50`. A stable feature set feeding
-models that keep changing and never separate is consistent with the screening working and there
-being nothing for it to find.
+`high_low_range`, `intraday_ret`, `volume_z_20`, `SMA_gap_50`. **Feature-selection outputs were
+relatively stable, but that stability did not translate into stable model selection or into
+detectable out-of-sample value.** Stability of a screening output is not evidence that the
+screen is correctly identifying predictive variables; a screen that consistently ranks the same
+uninformative variables highest would look the same from here.
 
 ---
 
@@ -202,15 +230,19 @@ being nothing for it to find.
 **Licensed.** Over 2019–2026, under this execution specification and at an assumed all-in cost
 of 2 bp per side, a nested walk-forward over 81 features and 23 model configurations produced no
 detectable incremental value against unconditional exposure to the same segment, and no
-detectable excess over cash. The direction calls lost money gross. Two measures of predictive
-skill computed independently of the P&L show none.
+detectable excess over cash. The realised gross positioning contribution was negative. Two
+diagnostics of predictive skill computed independently of the P&L provide no compelling
+corroborating evidence of it.
 
-**Not licensed.** That no such signal exists. Section 0.1 of the protocol states in advance what
-this sample can detect: an out-of-sample standard error on the Sharpe ratio of roughly 0.39
-means a true Sharpe of about 1.09 is needed for 80% power. **A real effect of the size these
-strategies plausibly have would not have been detected here**, and the wide intervals on both
-conditions — Condition A spans −0.519 to +0.806 — are that limitation showing through rather
-than an anomaly. The correct statement is "not supported", not "does not exist".
+**Not licensed.** That no such signal exists. **P1 did not provide evidence of stable
+incremental value under the frozen specification, in this sample, at this cost level.** The
+sample's resolution is limited and stated in advance: Section 0.1 gives an out-of-sample
+standard error on the Sharpe ratio of roughly 0.39, so a true Sharpe of about 1.09 would be
+needed for 80% power, and Condition A's interval accordingly spans −0.519 to +0.806. Under those
+constraints, an effect materially smaller than that threshold would not be reliably detected
+here. What the sample cannot do is separate "small or no true effect" from "a true effect this
+design lacks the power to see" — and the size of any true effect is not something this study
+estimates. The correct statement is "not supported", not "does not exist".
 
 **Also not licensed.** Any claim that the procedure is a cost-aware filter worth deploying. Its
 positive point estimate against always-long comes from not trading, and against cash it is
