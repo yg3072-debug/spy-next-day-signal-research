@@ -786,7 +786,7 @@ intraday ratio. Returns are never scaled by 390/210.
 
 ## 11. Verification
 
-`tests/` — 38 checks, run on every commit.
+`tests/` — the automated suite, run on every commit. It stood at 38 checks when this protocol was frozen; see the editorial note in Appendix B for what was added afterwards and why that does not constitute a change of method.
 
 The central one is **no look-ahead by construction, verified empirically**: the entire feature
 matrix is rebuilt on truncated history at three cut points, and every overlapping value must be
@@ -1012,6 +1012,17 @@ realised P&L and require another version. The train-minus-validation gaps from t
 are worth recording as the clearest thing the diagnostics produced: 0.66 for the baseline, 0.89
 to 1.45 for logistic, 1.63 to 2.94 for random forest, 3.17 to 4.80 for XGBoost, and 5.03 to 9.09
 for LightGBM.
+
+**Editorial note, 2026-08-24, after the confirmatory run.** Five checks were added to `tests/`,
+taking the suite from 38 to 54. They verify properties of the completed run's output rather than
+of the procedure: that a flat session is charged no execution cost and no financing, that every
+realised position equals what §3.3's band implies for its `mu_hat`, that the reported class
+probabilities sum to one, that the majority baseline's `mu_hat` is constant within an outer
+block and changes across blocks, and that each out-of-sample session appears exactly once. **No
+protocol text, configuration value, model, or reported figure changed.** They are recorded here
+because the alternative — a suite that silently grows while the document keeps quoting the frozen
+count — makes the freeze harder to check rather than easier. The state at freeze is tagged
+`protocol-v6-frozen` and can be diffed.
 
 `protocol-v5-frozen` is not overwritten. v6 is a separate tag with a separate configuration
 hash, so the two states remain distinguishable. Both smoke runs are in
