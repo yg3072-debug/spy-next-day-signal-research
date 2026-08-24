@@ -9,10 +9,10 @@ The research protocol is frozen and hashed before the confirmatory procedure run
 that the method was not tuned to the answer is something a reader can verify rather than take
 on trust.
 
-> **Status.** Data, benchmark, feature and inference layers are complete, tested and committed.
-> The confirmatory procedure is specified and frozen at
-> [`protocol-v5-frozen`](../../releases) and **has not yet been run**. No strategy result
-> exists in this repository.
+> **Status.** The confirmatory procedure was frozen at
+> [`protocol-v6-frozen`](../../releases), run once, and is reported in
+> [`reports/p1_confirmatory_result.md`](reports/p1_confirmatory_result.md). One of twenty-five
+> budgeted trials has been used. No further model was searched after the result.
 
 ---
 
@@ -26,6 +26,42 @@ Success here is not a profitable strategy. It is a defensible conclusion — eve
 justified in advance, out-of-sample performance reported with confidence intervals, and every
 comparison made on identical terms. **"No support after costs" is a valid outcome and the more
 likely one.** It is reported as such, without a second search.
+
+---
+
+## The answer
+
+**Neither pass condition is met: insufficient evidence of a stable incremental value.** Over
+1,865 out-of-sample sessions the Sharpe difference against always-long open-to-close is +0.164
+with a paired bootstrap lower bound of −0.519, and the annualised mean excess over cash is
+−1.32% with a lower bound of −7.32%.
+
+The verdict is not the interesting part. This is:
+
+```
+excess over always-long, decomposed
+
+    gross timing        −3.97%   ← the only term that is evidence of prediction
+    cost saving         +6.73%
+    financing saving    +0.34%
+    ────────────────────────────
+    net                 +3.10%   and not distinguishable from zero
+```
+
+**Every part of the point estimate comes from trading less, and the term that would constitute
+predictive ability is negative.** Two quantities computed without touching the P&L agree — a
+Brier skill of +0.012 against a training-base-rate reference, and a regression slope of realised
+return on predicted return of −0.085. The verdict holds at block lengths 20, 10 and 5.
+
+The protocol fixed the wording for this case before the run. Where a net excess is significant
+but the timing term is not, the available conclusion is that a cost-aware participation filter
+beats forced daily trading, not that a signal was found. Here even that is unavailable, because
+the interval spans zero.
+
+What this does **not** license is a claim that no such signal exists. Section 0.1 states in
+advance that a true Sharpe of roughly 1.09 would be needed for 80% power on this sample. An
+effect of the size these strategies plausibly have would not have been detected. "Not
+supported" and "does not exist" are different findings, and only the first is in evidence.
 
 ---
 
@@ -99,7 +135,7 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**38 tests** run on every commit.
+**49 tests** run on every commit.
 
 ---
 
@@ -128,6 +164,8 @@ pip install -r requirements.txt
 python scripts/freeze_market_data.py --verify   # confirm the snapshot checksum
 python scripts/build_benchmarks.py              # rebuild every benchmark and interval
 python scripts/build_docs.py                    # regenerate the feature dictionary
+python scripts/run_p1.py                        # the confirmatory run, ~20 minutes
+python scripts/evaluate_p1.py                   # the two conditions
 pytest tests/ -q
 ```
 
@@ -151,7 +189,8 @@ models for the alternative-data appendix, where a lexicon already answers whethe
 increment. A trading test on the Truth Social sample: 246 out-of-sample sessions give a standard
 error of 1.07 on a Sharpe difference, so only a difference above roughly 2.1 would be
 distinguishable, and running one anyway would be exactly the kind of noise this protocol exists
-to prevent.
+to prevent. The twenty-four pre-registered exploratory specifications, which have not been run
+and cannot change the headline above.
 
 Each is named in the protocol with what it is, why it would matter here, and why it is not in
 this round.
