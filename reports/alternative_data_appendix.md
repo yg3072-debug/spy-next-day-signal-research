@@ -135,9 +135,9 @@ none was pre-specified:
 | `news_uncertainty_rate` | +0.031 | | `truth_empty_post_count` | **+0.056** |
 
 Every one of them is within noise of zero. The largest in absolute value belongs to
-`truth_empty_post_count` — the number of **images and text-free reposts**. When
-counting pictures is as associated with tomorrow's return as anything the text
-says, the honest reading is that none of them is associated with it.
+`truth_empty_post_count` — the count of rows the extractor returned no text for.
+When a count of *empty rows* ranks with everything the text actually says, the
+honest reading is that none of them is associated with tomorrow's return.
 
 ---
 
@@ -207,7 +207,56 @@ kind at all, and the interesting quantity is the sensitivity of the procedure ra
 than the informativeness of the data. Knowing which of the two applies is worth more
 than the incremental test itself.
 
-Results are appended when the runs complete, in full and without selection.
+### Results
+
+All ten arms, in specification order. 1,247 out-of-sample sessions each, identical
+rows, paired stationary bootstrap against N0.
+
+| Arm | Alignment | Participation | Ann. mean excess | Sharpe | Δ Sharpe vs N0 | 95% interval |
+|---|---|---:|---:|---:|---:|---:|
+| **N0** | market only | 32.6% | +2.18% | **+0.213** | — | — |
+| **N1** | true | 36.8% | −0.62% | −0.058 | −0.271 | [−0.704, +0.106] |
+| N1p5 | *t−5* | 35.2% | −0.66% | −0.064 | −0.277 | [−0.767, +0.116] |
+| N1p10 | *t−10* | 33.8% | −0.53% | −0.051 | −0.264 | [−0.723, +0.121] |
+| N1p20 | *t−20* | 33.7% | −0.20% | −0.019 | −0.232 | [−0.704, +0.186] |
+| N1p60 | *t−60* | 34.8% | +2.51% | **+0.242** | +0.029 | [−0.301, +0.377] |
+| N1m5 | *t+5* | 33.4% | −1.84% | −0.177 | −0.390 | [−0.871, +0.001] |
+| N1m10 | *t+10* | 34.3% | +0.41% | +0.039 | −0.174 | [−0.905, +0.519] |
+| N1m20 | *t+20* | 27.5% | +0.39% | +0.042 | −0.171 | [−0.721, +0.408] |
+| N1m60 | *t+60* | 31.9% | −1.04% | −0.103 | −0.316 | [−0.925, +0.201] |
+
+**Every one of the nine intervals includes zero.** Adding news at the true
+alignment moves the Sharpe ratio by −0.271, and that is not distinguishable from
+no change.
+
+**Read the positive controls before drawing any conclusion about news.** N1m5,
+N1m10, N1m20 and N1m60 were handed headlines from five, ten, twenty and sixty
+sessions in the future — information no tradeable procedure could have. **All four
+have negative point estimates against N0.** Being told the future did not help.
+
+That reframes the whole test. A null at the true alignment would ordinarily be read
+as "these headlines do not predict this return". Here it cannot be, because the
+procedure did not improve when given headlines that trivially do contain the
+answer. **What the experiment establishes is a property of the procedure, not of
+the data**: at this sample size, with this feature screen, adding thirty-seven
+text columns to eighty-one market columns degrades the result regardless of what
+the text says. The screen must choose twenty-five features from one hundred and
+eighteen instead of eighty-one, and the cost of the extra dilution exceeds anything
+the additional columns contribute.
+
+The placebo arms make the same point from the other side. N1p60 — news from sixty
+sessions earlier, three months stale — is the **best of all ten arms** at +0.242,
+nominally above the market-only control. Nobody should believe three-month-old
+headlines predict tomorrow's open-to-close return. That row is what noise looks
+like when ten arms are run, and it is exactly why the protocol requires all ten to
+be reported rather than the best one.
+
+**What this does not license.** It is not evidence that financial news carries no
+information about next-day returns. It is evidence that this procedure, on this
+sample, cannot detect such information even when it is inserted artificially. A
+design that could — fewer, stronger text features; a screen that does not put text
+and market columns in direct competition; a longer sample — is a different study,
+and one this result gives a concrete reason to specify.
 
 ---
 
