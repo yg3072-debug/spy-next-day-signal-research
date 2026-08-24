@@ -2,15 +2,18 @@
   "mode": "exploratory",
   "config": "config/p1.yaml",
   "config_sha256": "c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7",
-  "overlay": "config/exploratory/E23.yaml",
-  "overlay_sha256": "476667109a9b9f877fcfcd4fa9e8b5b8dc5860ca36243b7b50f2ccff7ee15c51",
+  "overlay": "config/exploratory/E24.yaml",
+  "overlay_sha256": "bfbd1e91789250e987e88986179090b02c119c2d2fc136ac9b6813b04471afa6",
   "execution_specification": "alternative_close_to_close",
+  "execution_parameters": {
+    "borrow_annual_bps": 0.0
+  },
   "snapshot_sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
-  "code_commit": "2758e818d033600fbaaf80366e4957d5c0b1f7a0",
+  "code_commit": "b94317fbd0122cfa2e74484c52837023839abdc0",
   "modelling_sessions": 2864,
   "outer_steps": 89,
   "oos_sessions": 1864,
-  "seconds": 1316.7,
+  "seconds": 1221.9,
   "packages": {
     "numpy": "2.2.6",
     "pandas": "2.3.3"

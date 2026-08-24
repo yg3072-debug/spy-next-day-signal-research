@@ -10,9 +10,19 @@ that the method was not tuned to the answer is something a reader can verify rat
 on trust.
 
 > **Status.** The confirmatory procedure was frozen at
-> [`protocol-v6-frozen`](../../releases), run once, and is reported in
-> [`reports/p1_confirmatory_result.md`](reports/p1_confirmatory_result.md). One of twenty-five
-> budgeted trials has been used. No further model was searched after the result.
+> [`protocol-v6-frozen`](../../releases), run **once**, and is reported in
+> [`reports/p1_confirmatory_result.md`](reports/p1_confirmatory_result.md). **No second
+> confirmatory model was searched after the result**, which is the commitment that
+> matters and the one a reader should check.
+>
+> The pre-registered exploratory group has since been run in full and is reported in
+> [`reports/exploratory_results.md`](reports/exploratory_results.md) — all of it, in
+> specification order, including the rows that beat the confirmatory result. It cannot
+> change the headline and does not. The alternative-data layer is in
+> [`reports/alternative_data_appendix.md`](reports/alternative_data_appendix.md).
+> `results/experiment_registry.csv` records **43 realised strategy paths across 34
+> specification families**, which is the count any multiple-testing statement here
+> uses.
 
 ---
 
@@ -172,7 +182,9 @@ docs/       research_protocol.md     the frozen protocol
             alt_feature_dictionary.md    likewise, for the text features
             scraping_notes.md        alternative-data lineage and repair
             decision_log.md          every methodological decision and its rationale
-reports/    p1_confirmatory_result.md, alternative_data_appendix.md
+reports/    p1_confirmatory_result.md   the confirmatory result
+            exploratory_results.md       the E group, in full
+            alternative_data_appendix.md the text layer
 results/    benchmarks, the confirmatory run, every exploratory run, the registry
 scripts/    freeze_*, build_*, run_*, evaluate_*, verify_hashes, registry
 src/        features.py, altdata.py, execution.py, pipeline.py, stats.py, strategy.py

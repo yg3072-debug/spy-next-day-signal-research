@@ -69,7 +69,7 @@ this and the comparison would not be meaningful.
 |---|---|---:|---:|---:|---:|
 | E22 | close-to-close, 2 bp, 25 bp borrow | −0.153 | −2.97% | 98.4% | 0.861 |
 | E23 | close-to-close, 5 bp | −0.195 | −3.57% | 77.7% | 0.837 |
-| E24 | close-to-close, no borrow charge | *see §5* | | | |
+| E24 | close-to-close, no borrow charge | −0.159 | −3.09% | 98.9% | 0.853 |
 
 **Two of seventeen intervals exclude zero, and both are negative**: removing the
 macro groups and switching to a rolling window each make the result reliably worse.
@@ -166,6 +166,23 @@ tests cover it, and E24 was rerun. The episode is recorded rather than tidied aw
 because a configuration that is read, logged and then ignored is the most
 comfortable kind of error to have, and the only reason this one surfaced is that
 two rows which should have differed did not.
+
+**The corrected E24 comes out slightly worse than E22, not better**, at −0.159
+against −0.153, despite removing a cost. That is not a paradox and it is not a
+finding. The position rule prices the borrow charge, so removing it changes which
+positions are taken: E24 goes short on **9 sessions** where E22 stayed flat, those
+being the marginal shorts that a 25 bp charge made not worth opening. On those nine
+sessions the close-to-close return averaged **+0.151%** — the market rose — so the
+extra shorts lost money.
+
+Nine observations. Stating that the borrow charge improves performance would be
+reading a coin flip, and the honest summary is that removing it changes almost
+nothing: 9 sessions out of 1,864, and a Sharpe difference of 0.006 against a
+seed-only noise floor of 0.156.
+
+The three close-to-close runs are within 0.042 of each other in Sharpe while their
+cost assumptions differ by a factor of 2.5 on execution and infinitely on borrow.
+The specification is not failing because of what it is charged.
 
 ---
 

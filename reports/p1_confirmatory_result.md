@@ -300,5 +300,8 @@ commits `results/` contains the benchmarks and the registry and no strategy resu
 including two engineering smoke tests excluded from the trial budget, is recorded in
 `results/experiment_registry.csv`.
 
-**One of the twenty-five budgeted trials has been used. No further model was searched after this
-result.**
+**One confirmatory trial has been used, and no second confirmatory model was searched after this
+result.** The pre-registered exploratory group has since been run in full and is reported in
+`reports/exploratory_results.md`; it produced rows that beat this one, none of which changes
+anything above. Across everything examined, `results/experiment_registry.csv` records 43 realised
+strategy paths from 34 specification families.
