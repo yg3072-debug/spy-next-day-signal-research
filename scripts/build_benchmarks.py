@@ -129,14 +129,29 @@ def performance(excess: pd.Series, total: pd.Series, weights: pd.Series) -> dict
     }
 
 
-def breakeven_cost_o2c(weights: pd.Series, r_o2c: pd.Series) -> float:
+def breakeven_cost_o2c(
+    weights: pd.Series, r_o2c: pd.Series, financing: pd.Series | None = None
+) -> float:
     """One-side cost in bp at which the intraday specification's excess return is zero.
 
-    Closed form: mean(w*r) - 2c*mean(|w|) = 0  =>  c* = mean(w*r) / (2*mean(|w|)).
+        mean(w*r) - mean(f|w|) - 2c*mean(|w|) = 0
+        =>  c* = (mean(w*r) - mean(f|w|)) / (2*mean(|w|))
+
+    Financing belongs in the numerator: it is a cost the position pays regardless
+    of the execution assumption, so a breakeven that ignored it would overstate
+    how much execution cost the strategy can absorb.
+
+    The weights are those produced at the frozen base cost. Only the execution
+    cost is varied afterwards; positions are not re-optimised at each level,
+    because a band that widens with cost would be answering a different question.
     """
-    gross = (weights * r_o2c).mean()
     exposure = weights.abs().mean()
-    return np.nan if exposure == 0 else gross / (2.0 * exposure) * 1e4
+    if exposure == 0:
+        return np.nan
+    net_of_financing = (weights * r_o2c).mean()
+    if financing is not None:
+        net_of_financing -= (financing * weights.abs()).mean()
+    return net_of_financing / (2.0 * exposure) * 1e4
 
 
 def intraday_financing(frame: pd.DataFrame, index: pd.Index) -> pd.Series:
@@ -178,7 +193,7 @@ def run_o2c(
         excess = excess - financing * weights.abs()
     total = rf + excess
     stats = performance(excess, total, weights)
-    stats["breakeven_cost_bps_per_side"] = breakeven_cost_o2c(weights, r_o2c)
+    stats["breakeven_cost_bps_per_side"] = breakeven_cost_o2c(weights, r_o2c, financing)
     active = weights != 0
     if active.any():
         stats["hit_rate_active"] = (np.sign(weights[active]) == np.sign(r_o2c[active])).mean()
