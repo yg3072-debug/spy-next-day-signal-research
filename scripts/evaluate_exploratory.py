@@ -33,7 +33,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from build_benchmarks import cash_return, load_snapshot  # noqa: E402
 from src.execution import get_spec  # noqa: E402
-from src.stats import ann_mean, bootstrap_difference, sharpe  # noqa: E402
+from src.stats import (ann_mean, bootstrap_difference, expected_max_sharpe,  # noqa: E402
+                       sharpe)
 
 BLOCK, REPS = 20, 10_000
 BASE_COST = 2.0
@@ -127,6 +128,32 @@ def main() -> int:
     print("is not the finding. It is the maximum of a set of draws, and the interval")
     print("beside it is an ordinary paired interval that does not account for having")
     print("been chosen as a maximum. Protocol 7.2 rules out reading it as a result.")
+
+    # Protocol 6.4. Every realised path counts, not every E number: E10, E11, E12
+    # and E12b each produced several, and a reference computed on 19 when 33 were
+    # looked at understates exactly the thing it exists to measure.
+    paths = out[out.id != "P1 (confirmatory)"].sharpe.to_numpy(dtype=float)
+    rules = ROOT / "results" / "exploratory_position_rules.csv"
+    if rules.exists():
+        extra = pd.read_csv(rules)
+        paths = np.concatenate([paths, extra.loc[extra.kind == "exploratory",
+                                                 "sharpe"].to_numpy(dtype=float)])
+    paths = paths[np.isfinite(paths)]
+    if len(paths) >= 2:
+        reference = expected_max_sharpe(paths)
+        best = float(np.nanmax(paths))
+        spread = float(np.nanstd(paths, ddof=1))
+        print("")
+        print(f"Multiple-testing reference (protocol 6.4), on {len(paths)} realised paths:")
+        print(f"  spread of path Sharpe ratios, sd   {spread:+.3f}")
+        print(f"  best observed                      {best:+.3f}")
+        print(f"  E[max] from noise alone at N={len(paths)}       {reference:+.3f}")
+        print("")
+        verdict = "below" if best < reference else "above"
+        print(f"  The best path is {verdict} what {len(paths)} draws of pure noise with this")
+        print("  spread would be expected to produce. Descriptive, not a test: it adjusts")
+        print("  no interval, and it assumes independence that these paths do not have.")
+        print("  It is here so the largest number in the table is read next to something.")
     return 0
 
 
