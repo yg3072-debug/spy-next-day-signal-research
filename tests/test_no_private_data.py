@@ -53,6 +53,7 @@ POLICY_DOCUMENTS = {
     "DATA_POLICY.md": "states the redistribution rules and cites the dictionary "
                       "licence's own contact address",
     "docs/errata.md": "records what was removed, which requires describing it",
+    "docs/freeze_record.md": "reproduces the deleted tag objects verbatim, tagger lines included; tag and commit authorship is retained metadata by policy, and the record is only evidence if it matches what the object said",
     "tests/test_no_private_data.py": "the rules themselves",
     "tests/test_no_raw_corpus.py": "the rules themselves",
 }
