@@ -55,6 +55,7 @@ SOURCE = Path(os.environ.get("ALT_DATA_SOURCE", ROOT / "data" / "raw"))
 HEADLINES = SOURCE / "sp500_headlines_2008_2024.csv"
 POSTS = SOURCE / "trump_archive_full_cleaned.csv"
 
+LF = chr(10)
 TZ = "America/New_York"
 RAW_FORMAT = "%A, %B %d, %Y, %I:%M %p"
 OFFSETS = {"EDT": -4, "EST": -5}
@@ -275,8 +276,11 @@ def main() -> int:
 
     posts_out = DEST / "truth_social_sessions.csv"
     heads_out = DEST / "news_headlines_sessions.csv"
-    posts.to_csv(posts_out, index=False)
-    heads.to_csv(heads_out, index=False)
+    # Explicit LF, as freeze_market_data.py does. Written CRLF on Windows and
+    # checked out LF elsewhere, a file's recorded digest fails on every other
+    # platform -- which is what CI caught on the aggregates below.
+    posts.to_csv(posts_out, index=False, lineterminator=LF)
+    heads.to_csv(heads_out, index=False, lineterminator=LF)
 
     # The aggregates are built here too, so their checksums are part of the same
     # manifest the build writes. Adding them afterwards from another script meant a
@@ -292,7 +296,7 @@ def main() -> int:
         for label, frame in (("news", build_news_features(sessions, lexicon)),
                              ("truth_social", build_truth_social_features(sessions, lexicon))):
             out = DEST / f"{label}_session_features.csv"
-            frame.to_csv(out, float_format="%.10g")
+            frame.to_csv(out, float_format="%.10g", lineterminator=LF)
             derived[out.name] = sha256_of(out)
         print(f"derived features  {', '.join(derived)}")
     except FileNotFoundError as exc:
