@@ -1,7 +1,7 @@
 {
-  "reference": "v2-research",
-  "reference_commit": "4f961f39492ba0a323860c6e3b1d88bdb22a5c37",
-  "current_commit": "a86b46b88e3077f2cff36802d31cab88ca0cd748",
+  "reference": "v2-clean",
+  "reference_commit": "b71cc28943806410e2e3e96ef26199961e4ee4e9",
+  "current_commit": "b71cc28943806410e2e3e96ef26199961e4ee4e9",
   "files": {
     "results/oos_predictions.csv": {
       "rows_before": 1865,
