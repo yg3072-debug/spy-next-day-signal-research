@@ -37,7 +37,25 @@ ALLOWED_EMAILS = {
     "noreply@github.com",
 }
 
+# RFC 2606 reserves these domains so documentation can show an address that can
+# never belong to anyone. A usage example needs one; exempting the reserved domains
+# is narrower and more durable than exempting whichever file happens to contain it.
+RESERVED_DOMAINS = ("example.com", "example.org", "example.net", "invalid", "test")
+
 SKIP_SUFFIXES = {".png", ".pdf", ".jpg", ".jpeg", ".gz", ".zip", ".parquet"}
+
+# Documents that state these rules have to be able to name what they forbid. An
+# explicit, reasoned allowlist -- not a relaxed pattern, which would stop the check
+# working everywhere it matters.
+POLICY_DOCUMENTS = {
+    "PRIVACY.md": "states the personal-information rules and must name the shapes "
+                  "they exclude",
+    "DATA_POLICY.md": "states the redistribution rules and cites the dictionary "
+                      "licence's own contact address",
+    "docs/errata.md": "records what was removed, which requires describing it",
+    "tests/test_no_private_data.py": "the rules themselves",
+    "tests/test_no_raw_corpus.py": "the rules themselves",
+}
 
 
 def tracked_files() -> list[Path]:
@@ -67,8 +85,10 @@ def test_no_tracked_file_contains_a_machine_user_directory(corpus):
     is exactly the route nobody inspects.
     """
     offenders = {
-        str(p.relative_to(ROOT)): sorted(set(MACHINE_PATH.findall(t)))[:3]
-        for p, t in corpus if MACHINE_PATH.search(t)
+        rel: sorted(set(MACHINE_PATH.findall(t)))[:3]
+        for p, t in corpus
+        if (rel := str(p.relative_to(ROOT)).replace("\\", "/")) not in POLICY_DOCUMENTS
+        and MACHINE_PATH.search(t)
     }
     assert not offenders, f"machine paths in tracked files: {offenders}"
 
@@ -77,9 +97,16 @@ def test_no_tracked_file_contains_an_unexpected_email_address(corpus):
     """Only addresses that belong to a cited third party may appear."""
     found: dict[str, set[str]] = {}
     for p, text in corpus:
-        addresses = {a for a in EMAIL.findall(text) if a.lower() not in ALLOWED_EMAILS}
+        rel = str(p.relative_to(ROOT)).replace("\\", "/")
+        if rel in POLICY_DOCUMENTS:
+            continue
+        addresses = {
+            a for a in EMAIL.findall(text)
+            if a.lower() not in ALLOWED_EMAILS
+            and not a.lower().endswith(RESERVED_DOMAINS)
+        }
         if addresses:
-            found[str(p.relative_to(ROOT))] = addresses
+            found[rel] = addresses
     assert not found, (
         f"unexpected email addresses in tracked files: {found}. "
         "A crawler's contact address belongs in SCRAPER_CONTACT at run time, not here."
