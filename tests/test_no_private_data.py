@@ -42,6 +42,17 @@ ALLOWED_EMAILS = {
 # is narrower and more durable than exempting whichever file happens to contain it.
 RESERVED_DOMAINS = ("example.com", "example.org", "example.net", "invalid", "test")
 
+# One address, in one file, for one reason. docs/freeze_record.md reproduces the
+# deleted tag objects verbatim, and a tag object carries its tagger line; tag and
+# commit authorship is retained metadata by policy, and a record of what a tag said
+# is only evidence if it matches what the tag said.
+#
+# This is a pair, not a file exemption. Any other address in that file still fails,
+# and this address anywhere else still fails.
+APPROVED_ADDRESS_IN_FILE = {
+    ("docs/freeze_record.md", "yg3072@columbia.edu"),
+}
+
 SKIP_SUFFIXES = {".png", ".pdf", ".jpg", ".jpeg", ".gz", ".zip", ".parquet"}
 
 # Documents that state these rules have to be able to name what they forbid. An
@@ -53,7 +64,6 @@ POLICY_DOCUMENTS = {
     "DATA_POLICY.md": "states the redistribution rules and cites the dictionary "
                       "licence's own contact address",
     "docs/errata.md": "records what was removed, which requires describing it",
-    "docs/freeze_record.md": "reproduces the deleted tag objects verbatim, tagger lines included; tag and commit authorship is retained metadata by policy, and the record is only evidence if it matches what the object said",
     "tests/test_no_private_data.py": "the rules themselves",
     "tests/test_no_raw_corpus.py": "the rules themselves",
 }
@@ -105,6 +115,7 @@ def test_no_tracked_file_contains_an_unexpected_email_address(corpus):
             a for a in EMAIL.findall(text)
             if a.lower() not in ALLOWED_EMAILS
             and not a.lower().endswith(RESERVED_DOMAINS)
+            and (rel, a.lower()) not in APPROVED_ADDRESS_IN_FILE
         }
         if addresses:
             found[rel] = addresses
