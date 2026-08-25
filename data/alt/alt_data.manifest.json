@@ -1,0 +1,59 @@
+{
+  "built_utc": "2026-08-24T22:55:38+00:00",
+  "session_mapping": "bucket_t = (close_{t-1}, close_t], America/New_York, DST handled",
+  "boundary": "left-open, right-closed",
+  "calendar": "NYSE via pandas_market_calendars",
+  "sources": {
+    "truth_social": {
+      "path": "data/raw/trump_archive_full_cleaned.csv",
+      "sha256": "dee4ab0b41f709bc845fb7673147901abb3cac941992208a2d4aa5c80a3f26bd"
+    },
+    "news_headlines": {
+      "path": "data/raw/sp500_headlines_2008_2024.csv",
+      "sha256": "45d72b46859dd8a3ed67f2895dc0a73de99f9cd817c0b2f07317cf4594688823"
+    }
+  },
+  "derived_features": {
+    "news_session_features.csv": "77cd6b053e977cd4f29d2489f472e3c3fc34138510521df0314f6c4b9138282e",
+    "truth_social_session_features.csv": "ebe42283e6318c117d2d763d6cdb6bb80956853673e4c5f7c7e6d2c16c3d9f4f"
+  },
+  "redistribution": "The per-document text files are NOT committed. They are third-party content whose redistribution is the publisher's decision, not this project's, and the same reasoning applies to them as to the Loughran-McDonald dictionary. What is committed is the session-level aggregate the study consumes, plus the source checksums above, so a reader who obtains the same raw files can confirm they have the same bytes. Set ALT_DATA_SOURCE to point at them and rerun this script.",
+  "truth_social": {
+    "rows_in_file": 14145,
+    "exact_duplicate_rows": 0,
+    "duplicate_status_ids": 0,
+    "timezone_labels": {
+      "EDT": 9314,
+      "EST": 4811,
+      "nan": 20
+    },
+    "unparseable_timestamps": 0,
+    "timezone_label_missing": 20,
+    "hours_of_error_if_naive_column_used": {
+      "4.0": 9334,
+      "5.0": 4811
+    },
+    "empty_text": 3749,
+    "empty_text_share": 0.265,
+    "after_last_close": 0,
+    "rolled_into_a_later_session": 8597,
+    "rolled_share": 0.6078,
+    "tradable_one_session_earlier_with_a_morning_pipeline": 10520,
+    "share_tradable_one_session_earlier_with_a_morning_pipeline": 0.7437,
+    "proxy_posts_before_0930_any_calendar_day": 2652,
+    "proxy_share_before_0930_any_calendar_day": 0.1875
+  },
+  "news_headlines": {
+    "rows_in_file": 19127,
+    "exact_duplicate_rows": 974,
+    "rows_after_dedup": 18153,
+    "unparseable_dates": 0,
+    "empty_titles": 0,
+    "rolled_into_a_later_session": 0,
+    "assumption": "The file carries dates without times. A headline dated D is treated as fully known only after D's close and acted on at D+1's open. This is an availability assumption that cannot be verified from the data, and it is conservative: a headline published before D's open is treated as if it arrived at D's close."
+  },
+  "sha256": {
+    "truth_social_sessions.csv": "4eb4a609ec840b7d5003c3f002cea7575fb92e6e2e66d49542d686176f93ea68",
+    "news_headlines_sessions.csv": "2d1247874e4fe18af253e1a2d9b07d4df4d2713ef675fdec566b8d92a88191a6"
+  }
+}

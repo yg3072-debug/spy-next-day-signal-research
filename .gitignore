@@ -1,16 +1,50 @@
-.venv/
-venv/
+# Python
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+
+# OS
+Thumbs.db
 .DS_Store
-.idea/
-.vscode/
+
+# Local caches and large regenerable intermediates
+data/cache/
+results/**/*.parquet
+
+# Smoke-test artefacts are a plumbing check, not a deliverable.
+results/smoke/
+
+# Per-document alternative-data text. Third-party content; redistributing it is the
+# publisher's decision, not this project's -- the same reasoning applied to the
+# Loughran-McDonald dictionary. The session-level aggregates the study consumes ARE
+# committed, along with the source checksums, so the derivation stays verifiable.
+data/alt/truth_social_sessions.csv
+data/alt/news_headlines_sessions.csv
+
+# Third-party inputs, not redistributed. scripts/fetch_lexicon.py retrieves the
+# dictionary and verifies its checksum; docs/scraping_notes.md names both text
+# sources. Override the locations with LM_DICTIONARY and ALT_DATA_SOURCE.
+vendor/
 data/raw/
-data/processed/
-data/*.tmp
-data/nlp/*.tmp
-trump_archive_*.csv
-changed_rows_preview.csv
-*.log
-*.html
+
+# Raw third-party corpora and any per-record text. Never committed: whether to
+# redistribute third-party content is the publisher's decision, not this project's.
+# The session-level aggregates the study consumes ARE committed.
+data/raw/**
+vendor/**
+local_data/**
+**/trump_archive_raw.csv
+**/trump_archive_partial.csv
+**/trump_archive_full_cleaned.csv
+**/truth_social_sessions.csv
+**/news_headlines_sessions.csv
+**/empty_post_diagnosis.csv
+results/empty_post_diagnosis.csv
+**/*raw_posts*
+**/*raw_headlines*
+**/*transcript*

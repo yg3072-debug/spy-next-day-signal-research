@@ -1,7 +1,28 @@
-"""Download, validate, and freeze the market inputs used by the notebook.
+"""Freeze the market data snapshot used by the study.
 
-The canonical repository notebook reads the committed CSV snapshot by default.
-Run this module explicitly only when intentionally refreshing that snapshot.
+Every input series is downloaded once, aligned to the NYSE trading calendar, and
+written to a single CSV alongside a manifest recording provenance and a SHA-256
+checksum. All downstream work reads the frozen CSV, never the network, so any
+published number can be traced to an exact input.
+
+Design notes
+------------
+Calendar spine.  Sessions come from the NYSE calendar rather than from the
+intersection of the downloaded series. Taking an intersection silently drops
+sessions whenever any one series is missing a day, and reports nothing.
+
+Forward fill only.  Macro series that do not trade on every NYSE session are
+carried forward from the last observed value. Backward filling would move future
+information into the past. Every filled cell is counted and reported.
+
+Adjustment.  Prices are split- and dividend-adjusted. Note that the primary
+target, log(Close / Open) within a single session, is invariant to any
+multiplicative adjustment factor, since the factor cancels in the ratio.
+
+Usage
+-----
+    python scripts/freeze_market_data.py                 # write the snapshot
+    python scripts/freeze_market_data.py --verify        # check an existing one
 """
 
 from __future__ import annotations
@@ -9,223 +30,259 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import time
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import quote as url_quote, urlencode
-from urllib.request import Request, urlopen
 
+import numpy as np
 import pandas as pd
+import pandas_market_calendars as mcal
 import yfinance as yf
 from pandas_datareader import data as pdr
 
+START_DATE = "2015-01-01"
 
-START_DATE = "2022-01-01"
-END_DATE = "2026-05-06"  # yfinance end is exclusive; last observation is 2026-05-05.
-EXPECTED_FIRST_DATE = "2022-01-03"
-EXPECTED_LAST_DATE = "2026-05-05"
-EXPECTED_ROWS = 1088
+# ticker -> (output column name, source field)
+YAHOO_SINGLE = {
+    "^VIX": ("VIX", "Close"),
+    "DX-Y.NYB": ("DXY", "Close"),
+    "^TNX": ("TNX", "Close"),
+    # Brent is the primary oil factor. Front-month WTI settled at -$37.63 on
+    # 2020-04-20 during the Cushing storage crisis, which leaves any log-ratio
+    # feature undefined. Brent is seaborne, never went negative, and its daily
+    # log returns correlate 0.894 with WTI's over this sample. WTI is retained
+    # alongside it so the choice can be revisited without re-downloading.
+    "BZ=F": ("OIL", "Close"),
+    "CL=F": ("OIL_WTI", "Close"),
+    "QQQ": ("QQQ_Close", "Close"),
+    "IWM": ("IWM_Close", "Close"),
+    "DIA": ("DIA_Close", "Close"),
+}
+# DGS3MO is the cash / risk-free proxy. It is a constant-maturity bond-equivalent
+# yield (investment basis, actual/365), so it can be compounded directly. DTB3 is
+# the secondary-market bill rate on a 360-day DISCOUNT basis and needs converting
+# before use; it is carried only as a sensitivity check on the cash series.
+FRED_SERIES = ["DGS3MO", "DTB3", "DGS2", "DGS10"]
 
-REQUIRED_COLUMNS = [
-    "Open",
-    "High",
-    "Low",
-    "Price",
-    "Volume",
-    "VIX",
-    "DXY",
-    "TNX",
-    "OIL",
-    "DGS2",
-    "DGS10",
-    "QQQ_Price",
-    "IWM_Price",
-    "DIA_Price",
-]
+# Series that genuinely trade on a different calendar from NYSE equities and may
+# therefore need carrying forward. SPY itself must be complete on every session.
+FILL_LIMIT = 5
+
+SNAPSHOT_DIR = Path(__file__).resolve().parents[1] / "data"
 
 
-def _download_one(ticker: str, fields: list[str]) -> pd.DataFrame:
-    # The chart endpoint returns the same quote and adjusted-close fields that
-    # yfinance uses, while avoiding cookie/crumb rate-limit failures in CI.
-    period1 = int(pd.Timestamp(START_DATE, tz="UTC").timestamp())
-    period2 = int(pd.Timestamp(END_DATE, tz="UTC").timestamp())
-    query = urlencode(
-        {
-            "period1": period1,
-            "period2": period2,
-            "interval": "1d",
-            "events": "div,splits",
+def sha256_of(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def nyse_sessions(start: str, end: str) -> pd.DataFrame:
+    """One row per NYSE session, with its length and an early-close flag.
+
+    Session length is carried explicitly because an early close is a real trading
+    state, not a data defect: the same round-trip cost has to be recovered over a
+    shorter session. Returns are never rescaled by it.
+    """
+    cal = mcal.get_calendar("NYSE")
+    sched = cal.schedule(start_date=start, end_date=end)
+    open_et = sched["market_open"].dt.tz_convert("America/New_York")
+    close_et = sched["market_close"].dt.tz_convert("America/New_York")
+    minutes = ((close_et - open_et).dt.total_seconds() / 60).to_numpy()
+    sessions = pd.DatetimeIndex(sched.index).tz_localize(None).normalize()
+    return pd.DataFrame(
+        {"session_minutes": minutes.astype(int), "is_half_day": (minutes < 360).astype(int)},
+        index=sessions,
+    )
+
+
+def fetch_yahoo(ticker: str, start: str, end: str) -> pd.DataFrame:
+    """Download one ticker. One at a time keeps the columns flat."""
+    frame = yf.Ticker(ticker).history(
+        start=start, end=end, auto_adjust=True, actions=False
+    )
+    if frame.empty:
+        raise RuntimeError(f"Yahoo returned no rows for {ticker}")
+    frame.index = pd.DatetimeIndex(frame.index).tz_localize(None).normalize()
+    return frame[~frame.index.duplicated(keep="last")].sort_index()
+
+
+def build_snapshot(start: str, end: str) -> tuple[pd.DataFrame, dict]:
+    spine = nyse_sessions(start, end)
+    out = pd.DataFrame(index=spine.index)
+    out.index.name = "Date"
+    coverage: dict[str, dict] = {}
+
+    spy = fetch_yahoo("SPY", start, end)
+
+    # The calendar knows about sessions that have not traded yet. Cap the spine at
+    # the last session SPY actually has, then require no interior gaps.
+    last_traded = spy.index.max()
+    trailing = int((out.index > last_traded).sum())
+    out = out.loc[out.index <= last_traded]
+    spine = spine.loc[spine.index <= last_traded]
+
+    for field in ("Open", "High", "Low", "Close", "Volume"):
+        out[field] = spy[field].reindex(out.index)
+    missing_spy = int(out["Close"].isna().sum())
+    if missing_spy:
+        gaps = out.index[out["Close"].isna()]
+        raise RuntimeError(
+            f"SPY is missing {missing_spy} NYSE sessions inside the traded range, "
+            f"first {gaps[0].date()}. The calendar spine and the price history "
+            "disagree; investigate before freezing."
+        )
+    coverage["SPY"] = {"native_rows": int(len(spy)), "filled": 0}
+
+    for ticker, (col, field) in YAHOO_SINGLE.items():
+        raw = fetch_yahoo(ticker, start, end)[field]
+        aligned = raw.reindex(out.index)
+        n_missing = int(aligned.isna().sum())
+        filled = aligned.ffill(limit=FILL_LIMIT)
+        still_missing = int(filled.isna().sum())
+        out[col] = filled
+        coverage[ticker] = {
+            "column": col,
+            "native_rows": int(raw.notna().sum()),
+            "missing_on_nyse_sessions": n_missing,
+            "forward_filled": n_missing - still_missing,
+            "unresolved": still_missing,
         }
-    )
-    encoded_ticker = url_quote(ticker, safe="")
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded_ticker}?{query}"
-    chart = None
-    last_error = None
-    for attempt in range(3):
-        try:
-            request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urlopen(request, timeout=30) as response:
-                payload = json.load(response)
-            result = payload.get("chart", {}).get("result")
-            candidate = result[0] if result else None
-            if candidate and candidate.get("timestamp"):
-                chart = candidate
-                break
-            last_error = payload.get("chart", {}).get("error") or "missing timestamp"
-        except Exception as exc:  # Retry transient network/provider responses.
-            last_error = repr(exc)
-        time.sleep(attempt + 1)
 
-    if chart is None:
-        raise RuntimeError(f"No Yahoo Finance data returned for {ticker}: {last_error}")
-    timestamps = chart["timestamp"]
-    quote = chart["indicators"]["quote"][0]
-    adjusted = chart["indicators"].get("adjclose", [{}])[0].get("adjclose", quote["close"])
-    timezone_name = chart.get("meta", {}).get("exchangeTimezoneName", "America/New_York")
+    yields = pdr.DataReader(FRED_SERIES, "fred", start, end)
+    yields.index = pd.DatetimeIndex(yields.index).tz_localize(None).normalize()
+    for col in FRED_SERIES:
+        aligned = yields[col].reindex(out.index)
+        n_missing = int(aligned.isna().sum())
+        filled = aligned.ffill(limit=FILL_LIMIT)
+        out[col] = filled
+        coverage[col] = {
+            "column": col,
+            "native_rows": int(yields[col].notna().sum()),
+            "missing_on_nyse_sessions": n_missing,
+            "forward_filled": n_missing - int(filled.isna().sum()),
+            "unresolved": int(filled.isna().sum()),
+        }
 
-    index = (
-        pd.to_datetime(timestamps, unit="s", utc=True)
-        .tz_convert(timezone_name)
-        .normalize()
-        .tz_localize(None)
-    )
-    raw_close = pd.Series(quote["close"], index=index, dtype="float64")
-    adj_close = pd.Series(adjusted, index=index, dtype="float64")
-    adjustment = adj_close / raw_close
+    out["session_minutes"] = spine["session_minutes"]
+    out["is_half_day"] = spine["is_half_day"]
 
-    frame = pd.DataFrame(index=index)
-    frame["Open"] = pd.Series(quote["open"], index=index, dtype="float64") * adjustment
-    frame["High"] = pd.Series(quote["high"], index=index, dtype="float64") * adjustment
-    frame["Low"] = pd.Series(quote["low"], index=index, dtype="float64") * adjustment
-    frame["Close"] = adj_close
-    frame["Volume"] = pd.Series(quote["volume"], index=index, dtype="float64")
-    frame = frame.dropna(how="all")
+    # Leading rows can still be NaN where a series starts after START_DATE or a
+    # gap exceeded FILL_LIMIT. Trim the leading block, then require completeness.
+    first_complete = out.dropna().index.min()
+    trimmed = int((out.index < first_complete).sum())
+    out = out.loc[out.index >= first_complete]
+    if out.isna().any().any():
+        bad = out.columns[out.isna().any()].tolist()
+        raise RuntimeError(f"Unresolved gaps remain in {bad} after the leading trim.")
 
-    missing = sorted(set(fields).difference(frame.columns))
-    if missing:
-        raise RuntimeError(f"{ticker} is missing columns: {missing}")
-
-    result = frame[fields].copy()
-    result.index = pd.to_datetime(result.index).tz_localize(None)
-    result.index.name = "Date"
-    return result
-
-
-def validate_snapshot(frame: pd.DataFrame, strict: bool = True) -> None:
-    """Fail fast when a snapshot does not match the published research window."""
-    missing = sorted(set(REQUIRED_COLUMNS).difference(frame.columns))
-    if missing:
-        raise ValueError(f"Snapshot is missing columns: {missing}")
-    if frame.index.has_duplicates:
-        raise ValueError("Snapshot contains duplicate dates.")
-    if not frame.index.is_monotonic_increasing:
-        raise ValueError("Snapshot dates must be sorted ascending.")
-    if frame[REQUIRED_COLUMNS].isna().any().any():
-        bad = frame[REQUIRED_COLUMNS].columns[
-            frame[REQUIRED_COLUMNS].isna().any()
-        ].tolist()
-        raise ValueError(f"Snapshot contains missing values in: {bad}")
-
-    if strict:
-        actual = (len(frame), frame.index.min().date().isoformat(), frame.index.max().date().isoformat())
-        expected = (EXPECTED_ROWS, EXPECTED_FIRST_DATE, EXPECTED_LAST_DATE)
-        if actual != expected:
-            raise ValueError(
-                "Snapshot window changed. "
-                f"Expected rows/first/last={expected}, received={actual}."
-            )
-
-
-def snapshot_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def download_market_inputs() -> pd.DataFrame:
-    """Recreate the exact pre-feature-engineering input table."""
-    spy = _download_one("SPY", ["Open", "High", "Low", "Close", "Volume"])
-    spy = spy.rename(columns={"Close": "Price"})
-
-    macro_specs = {
-        "VIX": ("^VIX", "Close"),
-        "DXY": ("DX-Y.NYB", "Close"),
-        "TNX": ("^TNX", "Close"),
-        "OIL": ("CL=F", "Close"),
+    meta = {
+        "coverage": coverage,
+        "leading_rows_trimmed": trimmed,
+        "trailing_untraded_sessions_dropped": trailing,
+        "fill_limit_sessions": FILL_LIMIT,
     }
-    macro_frames = []
-    for output_name, (ticker, field) in macro_specs.items():
-        macro_frames.append(_download_one(ticker, [field]).rename(columns={field: output_name}))
-
-    # Match the original research logic: an inner join across the five core sources.
-    inputs = spy.join(macro_frames, how="inner").sort_index()
-
-    # FRED observations are aligned to SPY dates and carried forward across holidays.
-    yields = pdr.DataReader(["DGS2", "DGS10"], "fred", START_DATE, END_DATE)
-    yields.index = pd.to_datetime(yields.index).tz_localize(None)
-    yields = yields.reindex(inputs.index).ffill()
-    inputs = inputs.join(yields[["DGS2", "DGS10"]], how="left")
-
-    # Cross-market ETFs are aligned to the core input calendar, as in the notebook.
-    for name in ["QQQ", "IWM", "DIA"]:
-        close = _download_one(name, ["Close"]).rename(columns={"Close": f"{name}_Price"})
-        inputs[f"{name}_Price"] = close.reindex(inputs.index).ffill()[f"{name}_Price"]
-
-    inputs = inputs[REQUIRED_COLUMNS].copy()
-    validate_snapshot(inputs, strict=True)
-    return inputs
+    return out, meta
 
 
-def build_snapshot(output_path: str | Path, manifest_path: str | Path | None = None) -> pd.DataFrame:
-    output_path = Path(output_path)
-    manifest_path = Path(manifest_path) if manifest_path else output_path.with_suffix(".manifest.json")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    inputs = download_market_inputs()
-    inputs.to_csv(output_path, index_label="Date", float_format="%.10f")
+def write_snapshot(frame: pd.DataFrame, meta: dict, outdir: Path) -> tuple[Path, Path]:
+    outdir.mkdir(parents=True, exist_ok=True)
+    stamp = frame.index.max().date().isoformat()
+    csv_path = outdir / f"market_inputs_{stamp}.csv"
+    frame.to_csv(csv_path, float_format="%.10g", lineterminator="\n")
 
     manifest = {
-        "snapshot_file": output_path.name,
-        "sha256": snapshot_sha256(output_path),
-        "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "source_window": {"start_inclusive": START_DATE, "end_exclusive": END_DATE},
-        "first_observation": EXPECTED_FIRST_DATE,
-        "last_observation": EXPECTED_LAST_DATE,
-        "rows": len(inputs),
-        "columns": list(inputs.columns),
+        "snapshot_file": csv_path.name,
+        "sha256": sha256_of(csv_path),
+        "frozen_at_utc": datetime.now(timezone.utc).isoformat(),
+        "requested_window": {"start_inclusive": START_DATE, "end": stamp},
+        "first_session": frame.index.min().date().isoformat(),
+        "last_session": frame.index.max().date().isoformat(),
+        "sessions": int(len(frame)),
+        "half_day_sessions": int(frame["is_half_day"].sum()),
+        "columns": list(frame.columns),
+        "calendar": "NYSE via pandas_market_calendars",
+        "adjustment": "yfinance auto_adjust=True (split and dividend adjusted OHLC; Volume unadjusted)",
         "sources": {
-            "Yahoo Finance": ["SPY", "^VIX", "DX-Y.NYB", "^TNX", "CL=F", "QQQ", "IWM", "DIA"],
-            "FRED": ["DGS2", "DGS10"],
+            "Yahoo Finance": ["SPY"] + list(YAHOO_SINGLE),
+            "FRED": FRED_SERIES,
         },
-        "yfinance_version": yf.__version__,
-        "yahoo_download_method": "v8 chart endpoint with auto-adjust equivalent",
-        "pandas_version": pd.__version__,
+        "alignment": {
+            "spine": "NYSE session calendar, not the intersection of series",
+            "gap_policy": f"forward fill only, limit {FILL_LIMIT} sessions; never backward fill",
+        },
+        "package_versions": {
+            "python": sys.version.split()[0],
+            "numpy": np.__version__,
+            "pandas": pd.__version__,
+            "yfinance": yf.__version__,
+            "pandas_market_calendars": mcal.__version__,
+        },
+        **meta,
     }
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    return inputs
+    manifest_path = outdir / f"market_inputs_{stamp}.manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return csv_path, manifest_path
 
 
-def main() -> None:
+def verify(outdir: Path) -> int:
+    manifests = sorted(outdir.glob("market_inputs_*.manifest.json"))
+    if not manifests:
+        print("No manifest found.")
+        return 1
+    ok = True
+    for mpath in manifests:
+        manifest = json.loads(mpath.read_text(encoding="utf-8"))
+        csv_path = outdir / manifest["snapshot_file"]
+        actual = sha256_of(csv_path)
+        match = actual == manifest["sha256"]
+        ok &= match
+        print(f"{csv_path.name}: {'OK' if match else 'CHECKSUM MISMATCH'}")
+        if not match:
+            print(f"  expected {manifest['sha256']}\n  actual   {actual}")
+    return 0 if ok else 1
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output",
-        default="data/market_inputs_2026-05-05.csv",
-        help="Destination CSV path.",
-    )
-    parser.add_argument(
-        "--manifest",
-        default="data/market_inputs_2026-05-05.manifest.json",
-        help="Destination manifest path.",
-    )
+    parser.add_argument("--verify", action="store_true", help="check existing snapshots and exit")
+    parser.add_argument("--end", default=None, help="end date (exclusive), defaults to today")
+    parser.add_argument("--outdir", default=None,
+                        help="write elsewhere than data/; E21 uses this so a second "
+                             "vintage cannot overwrite the frozen snapshot")
     args = parser.parse_args()
-    frame = build_snapshot(args.output, args.manifest)
-    print(
-        f"Saved {len(frame)} rows from {frame.index.min().date()} "
-        f"through {frame.index.max().date()} to {args.output}."
-    )
+
+    if args.verify:
+        return verify(SNAPSHOT_DIR)
+
+    end = args.end or (pd.Timestamp.today().normalize() + pd.Timedelta(days=1)).date().isoformat()
+    frame, meta = build_snapshot(START_DATE, end)
+    outdir = (SNAPSHOT_DIR.parent / args.outdir) if args.outdir else SNAPSHOT_DIR
+    if outdir.resolve() == SNAPSHOT_DIR.resolve() and args.outdir:
+        raise SystemExit("refusing to write a second vintage into the frozen snapshot directory")
+    csv_path, manifest_path = write_snapshot(frame, meta, outdir)
+
+    print(f"Sessions      {len(frame)}  ({frame.index.min().date()} to {frame.index.max().date()})")
+    print(f"Half days     {int(frame['is_half_day'].sum())}")
+    print(f"Leading trim  {meta['leading_rows_trimmed']} sessions")
+    print(f"Snapshot      {csv_path}")
+    print(f"SHA-256       {sha256_of(csv_path)}")
+    print(f"Manifest      {manifest_path}")
+    print("\nPer-series coverage on NYSE sessions:")
+    for name, info in meta["coverage"].items():
+        if name == "SPY":
+            print(f"  {name:<10} complete, {info['native_rows']} native rows")
+            continue
+        print(
+            f"  {name:<10} -> {info['column']:<10} native {info['native_rows']:>5}"
+            f"   missing {info['missing_on_nyse_sessions']:>4}"
+            f"   ffilled {info['forward_filled']:>4}"
+            f"   unresolved {info['unresolved']:>3}"
+        )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

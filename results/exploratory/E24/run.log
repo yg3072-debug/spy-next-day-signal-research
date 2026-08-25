@@ -1,0 +1,27 @@
+config          config/p1.yaml  c219757bb47c087e...
+overlay         config/exploratory/E24.yaml  bfbd1e91789250e9...
+execution       alternative_close_to_close
+modelling set   2864 sessions, 2015-04-01 to 2026-08-20
+initial train   1000
+outer steps     89  (step 21, retune every 12)
+candidates      23  over 23 fitted models
+
+  step   0  retune  chose majority_baseline|{}   eligible 23/23
+  step  12  retune  chose logistic|{'C': 0.1, 'class_weight': None}   eligible 18/23
+  step  24  retune  chose majority_baseline|{}   eligible 16/23
+  step  36  retune  chose random_forest|{'max_depth': 5, 'min_samples_leaf': 20}   eligible 10/23
+  step  48  retune  chose majority_baseline|{}   eligible 9/23
+  step  60  retune  chose majority_baseline|{}   eligible 14/23
+  step  72  retune  chose logistic|{'C': 0.01, 'class_weight': 'balanced'}   eligible 21/23
+  step  84  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 19/23
+
+run complete in 1221.9s
+  oos_predictions.csv   1864 rows x 12 cols
+    columns             ['step', 'model', 'params', 'delta', 'p_short', 'p_flat', 'p_long', 'mu_hat', 'position', 'realised_c2c', 'carry_rf', 'calibration_skipped']
+    dates               2019-03-22 to 2026-08-20
+    positions           {-1.0: np.int64(502), 0.0: np.int64(20), 1.0: np.int64(1342)}
+    calibration skipped 0 rows
+  selection_log.csv     8 retunes
+  candidate_diagnostics 184 rows (8 retunes x 23 candidates)
+  feature_stability.csv 38 distinct features selected
+  run_manifest.json     written

@@ -1,0 +1,31 @@
+config          config/p1.yaml  c219757bb47c087e...
+overlay         config/exploratory/E14.yaml  33eb915e3d82bf23...
+execution       primary_open_to_close
+modelling set   2865 sessions, 2015-03-31 to 2026-08-20
+initial train   1500
+outer steps     65  (step 21, retune every 12)
+candidates      23  over 23 fitted models
+
+  step   0  retune  chose majority_baseline|{}   eligible 10/23
+  step  12  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 11/23
+  step  24  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 5/23
+  step  36  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 9/23
+  step  48  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 12/23
+  step  60  retune  chose logistic|{'C': 0.01, 'class_weight': None}   eligible 7/23
+
+run complete in 1280.1s
+  oos_predictions.csv   1365 rows x 12 cols
+    columns             ['step', 'model', 'params', 'delta', 'p_short', 'p_flat', 'p_long', 'mu_hat', 'position', 'realised_o2c', 'financing', 'calibration_skipped']
+    dates               2021-03-16 to 2026-08-20
+    positions           {-1.0: np.int64(148), 0.0: np.int64(802), 1.0: np.int64(415)}
+    calibration skipped 0 rows
+  selection_log.csv     6 retunes
+  candidate_diagnostics 138 rows (6 retunes x 23 candidates)
+  feature_stability.csv 42 distinct features selected
+  run_manifest.json     written
+
+--- stderr ---
+D:\SPY Prediction\repo\scripts\run_p1.py:475: RuntimeWarning: Mean of empty slice
+  inner.setdefault(key, []).append(res["mu_hat"])
+D:\SPY Prediction\repo\scripts\run_p1.py:475: RuntimeWarning: Mean of empty slice
+  inner.setdefault(key, []).append(res["mu_hat"])

@@ -1,0 +1,9 @@
+step,date,chosen_id,chosen_score,baseline_selected,n_candidates,reason,best_id,best_score,se_best,n_eligible,n_degenerate
+0,2019-03-20,"logistic|{'C': 0.01, 'class_weight': None}",-0.9778633090247839,False,6,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",-0.9268807850491725,0.6599397037779389,6,0
+12,2020-03-19,"logistic|{'C': 0.01, 'class_weight': 'balanced'}",-0.8636891381433758,False,6,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",-0.38507433893884147,0.5658103333642134,5,0
+24,2021-03-19,"logistic|{'C': 0.01, 'class_weight': None}",-0.5428246530760721,False,6,one-standard-error rule,"logistic|{'C': 0.1, 'class_weight': None}",-0.27465359847543813,0.49843322076753865,6,0
+36,2022-03-18,"logistic|{'C': 0.01, 'class_weight': None}",-0.43702716075468184,False,6,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",-0.40907786315273,0.4931829323683199,6,0
+48,2023-03-21,"logistic|{'C': 0.01, 'class_weight': None}",-0.005158357109931654,False,6,one-standard-error rule,"logistic|{'C': 0.01, 'class_weight': None}",-0.005158357109931654,0.8211524407851591,6,0
+60,2024-03-21,"logistic|{'C': 0.01, 'class_weight': None}",-0.17648824979705982,False,6,one-standard-error rule,"logistic|{'C': 0.01, 'class_weight': None}",-0.17648824979705982,0.5740775616813687,5,0
+72,2025-03-25,"logistic|{'C': 0.01, 'class_weight': None}",-0.6122801183077621,False,6,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",-0.284853607482818,0.6514690766841249,6,0
+84,2026-03-26,"logistic|{'C': 0.01, 'class_weight': None}",0.14157706750867882,False,6,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': 'balanced'}",0.5787862679008655,0.7442222504305356,6,0

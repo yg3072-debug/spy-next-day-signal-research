@@ -1,22 +1,29 @@
-# Validated top-level research stack (Python 3.12)
-numpy==2.5.2
-pandas==2.2.3
-matplotlib==3.10.8
-seaborn==0.13.2
-scipy==1.18.0
-scikit-learn==1.8.0
-yfinance==0.2.65
-pandas-datareader==0.10.0
-pandas-market-calendars==5.1.1
-xgboost==3.0.5
-lightgbm==4.6.0
-nbformat==5.10.4
-nbconvert==7.16.6
-ipykernel==6.30.1
-jupyterlab>=4.1,<5
+# Pinned to the exact versions that produced the published results.
+# Regenerating any result with different versions is a new research run,
+# not a reproduction.
+# Python 3.10.20
 
-# Optional archive collection and text cleaning for the NLP extension
-requests>=2.32,<3
-beautifulsoup4>=4.13,<5
-lxml>=5.3,<7
-ftfy>=6.3,<7
+arch==8.0.0
+beautifulsoup4==4.15.0
+curl_cffi==0.16.0
+exchange_calendars==4.13.2
+ipykernel==7.3.0
+joblib==1.5.3
+jupyterlab==4.6.3
+lightgbm==4.7.0
+lxml==6.1.1
+matplotlib==3.10.9
+numpy==2.2.6
+pandas-datareader==0.10.0
+pandas==2.3.3
+pandas_market_calendars==5.4.0
+pyarrow==25.0.1
+pytest==9.1.1
+requests==2.34.2
+scikit-learn==1.7.2
+scipy==1.15.3
+seaborn==0.13.2
+statsmodels==0.14.6
+threadpoolctl==3.6.0
+xgboost==3.2.0
+yfinance==0.2.66
