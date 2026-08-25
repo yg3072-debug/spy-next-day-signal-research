@@ -1,0 +1,9 @@
+step,date,chosen_id,chosen_score,baseline_selected,n_candidates,reason,best_id,best_score,se_best,n_eligible,n_degenerate
+0,2019-03-20,majority_baseline|{},-0.8903426762562632,True,23,one-standard-error rule,"lightgbm|{'num_leaves': 15, 'learning_rate': 0.1, 'min_child_samples': 60}",-0.5468619212221666,0.5825036055697623,12,0
+12,2020-03-19,"logistic|{'C': 0.01, 'class_weight': None}",-0.7809480105781128,False,23,one-standard-error rule,"random_forest|{'max_depth': 5, 'min_samples_leaf': 20}",-0.15277073329736743,0.6451947267814832,14,1
+24,2021-03-19,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.1, 'min_child_samples': 60}",0.7789541138210176,False,23,one-standard-error rule,"xgboost|{'max_depth': 3, 'learning_rate': 0.03}",0.8867701891543639,0.5077664494991858,4,1
+36,2022-03-18,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}",0.5854489283831075,False,23,one-standard-error rule,"lightgbm|{'num_leaves': 7, 'learning_rate': 0.1, 'min_child_samples': 30}",1.1551333125820356,0.6553627530772854,5,1
+48,2023-03-21,"logistic|{'C': 0.01, 'class_weight': None}",-0.04172334483021082,False,23,one-standard-error rule,"logistic|{'C': 0.01, 'class_weight': 'balanced'}",0.4348677115144785,0.7835203320426842,13,1
+60,2024-03-21,"logistic|{'C': 0.01, 'class_weight': None}",0.5048873147006666,False,23,one-standard-error rule,"logistic|{'C': 0.01, 'class_weight': None}",0.5048873147006666,0.6555663550453315,3,1
+72,2025-03-25,majority_baseline|{},-0.4932707863513189,True,23,one-standard-error rule,majority_baseline|{},-0.4932707863513189,0.5711483964816886,7,0
+84,2026-03-26,majority_baseline|{},-0.3157952488129069,True,23,one-standard-error rule,"logistic|{'C': 1.0, 'class_weight': None}",-0.05806658567887319,0.6627767777840268,13,0

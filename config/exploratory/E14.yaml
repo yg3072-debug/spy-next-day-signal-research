@@ -1,0 +1,17 @@
+# E14 - initial training window of 1500 sessions
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# A longer burn-in trades out-of-sample length for training length: roughly
+# two fewer years of evaluation in exchange for a better-determined first
+# model. Which of the two the result is limited by is not obvious in advance.
+
+meta:
+  id: E14
+  role: exploratory
+
+sample:
+  initial_train_sessions: 1500

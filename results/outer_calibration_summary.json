@@ -1,0 +1,14 @@
+{
+  "sessions": 1865,
+  "scope": "outer_validation",
+  "out_of_sample_for_base_model": true,
+  "out_of_sample_for_calibrator": true,
+  "eligible_as_confirmatory_evidence": true,
+  "brier_uncalibrated": 0.6259093005181425,
+  "brier_calibrated": 0.6264649948743826,
+  "difference_calibrated_minus_uncalibrated": 0.0005556943562400329,
+  "brier_reference_25_50_25": 0.6342493297587132,
+  "skill_uncalibrated_vs_reference": 0.01314944904040094,
+  "skill_calibrated_vs_reference": 0.012273304076319658,
+  "rows_where_calibration_was_skipped": 0
+}

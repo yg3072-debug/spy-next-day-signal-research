@@ -1,0 +1,16 @@
+# E2 - macro group removed
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# 36 features across three macro groups. The largest single block, and the one
+# whose publication lags are the most demanding to handle correctly.
+
+meta:
+  id: E2
+  role: exploratory
+
+feature_selection:
+  exclude_groups: [macro_change, macro_zscore, yield_curve]

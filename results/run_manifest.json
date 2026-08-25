@@ -1,45 +1,19 @@
 {
-  "run_name": "canonical-frozen-snapshot-fast-reproduction",
-  "data_snapshot": "data/market_inputs_2026-05-05.csv",
-  "data_sha256": "d4625e4b58739080520150b5ecfeaf1e6967185f628bc6611129efecc4db4f5d",
-  "raw_input_rows": 1088,
-  "model_data_rows": 1027,
-  "train_rows": 821,
-  "test_rows": 206,
-  "modeling_first_date": "2022-03-30",
-  "modeling_last_date": "2026-05-04",
-  "q_low": -0.5157970749688997,
-  "q_high": 0.7234236501792839,
-  "selected_model": "Tuned LightGBM",
-  "selected_feature_count": 21,
-  "refresh_data": false,
-  "full_tuning": false,
-  "n_jobs": 1,
-  "validated_environment": {
-    "python": "3.12",
-    "numpy": "2.5.2",
-    "pandas": "2.2.3",
-    "scipy": "1.18.0",
-    "scikit_learn": "1.8.0",
-    "xgboost": "3.0.5",
-    "lightgbm": "4.6.0",
-    "yfinance": "0.2.65"
-  },
-  "final_classification": {
-    "accuracy": 0.4029126213592233,
-    "balanced_accuracy": 0.41518122400475344,
-    "macro_f1": 0.39305784124077303
-  },
-  "final_trading": {
-    "mean_daily_return": 0.0008277256527202862,
-    "annualized_return": 0.2085868644855121,
-    "annualized_volatility": 0.10637815018103684,
-    "sharpe": 1.960805523789745,
-    "max_drawdown": -0.09551680928851047,
-    "hit_rate_active_trades": 0.5540540540540541,
-    "false_long_count": 22,
-    "long_pred_count": 100,
-    "false_long_rate": 0.22,
-    "active_trade_rate": 0.7184466019417476
+  "mode": "confirmatory",
+  "config": "config/p1.yaml",
+  "config_sha256": "c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7",
+  "overlay": null,
+  "overlay_sha256": null,
+  "execution_specification": "primary_open_to_close",
+  "execution_parameters": {},
+  "snapshot_sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
+  "code_commit": "48a6c85f2490b45524319ed22e7295cda83f4232",
+  "modelling_sessions": 2865,
+  "outer_steps": 89,
+  "oos_sessions": 1865,
+  "seconds": 1386.8,
+  "packages": {
+    "numpy": "2.2.6",
+    "pandas": "2.3.3"
   }
 }

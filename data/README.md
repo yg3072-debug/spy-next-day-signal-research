@@ -1,22 +1,48 @@
-# Frozen research inputs
+# Data
 
-`market_inputs_2026-05-05.csv` is the canonical pre-feature-engineering snapshot for the published run. It contains 1,088 observations from January 3, 2022 through May 5, 2026.
+What is here, what is not, and where the missing pieces come from.
 
-Sources:
+## Committed
 
-- Yahoo Finance: SPY, VIX, DXY, 10-year Treasury yield, crude oil, QQQ, IWM, and DIA
-- Federal Reserve Economic Data (FRED): DGS2 and DGS10
-
-The adjacent manifest records the source window, columns, package versions, and SHA-256 checksum. The snapshot is included solely to make the educational research pipeline reproducible; upstream provider terms and attributions continue to apply.
-
-To refresh the inputs intentionally:
-
-```bash
-python scripts/freeze_market_data.py
+```
+market_inputs_2026-08-21.csv        the frozen market snapshot, 2,926 NYSE sessions
+market_inputs_2026-08-21.manifest.json   its SHA-256, coverage and fill accounting
+vintage_e21/                        a second download of the same window (E21)
+alt/truth_social_session_features.csv    per-session NLP aggregates
+alt/news_session_features.csv            per-session NLP aggregates
+alt/alt_data.manifest.json          source checksums, row counts, audit counts
 ```
 
-A refresh can change historical adjusted prices and must be treated as a new research run. Regenerate every result and update the manifest, result files, and README together.
+The `alt/` feature tables hold counts and ratios per trading day: document counts,
+token counts, Loughran-McDonald category rates, topic keyword rates. **No document
+text, no identifiers, no URLs.** They are not reversible — a count of negative words
+in a session does not reconstruct the sentences.
 
-The separate `nlp/` directory contains frozen derived inputs for the exploratory
-Trump-post ablation. Its raw post corpus is intentionally excluded; see
-`nlp/README.md` for sourcing, alignment, and interpretation limits.
+## Not committed
+
+```
+raw/          the two text corpora, gitignored
+../vendor/    the Loughran-McDonald dictionary, gitignored
+```
+
+Whether to redistribute a publisher's content is that publisher's decision. See
+`../DATA_POLICY.md`.
+
+To rebuild the aggregates from raw:
+
+```bash
+python scripts/fetch_lexicon.py             # dictionary, checksum-verified
+python scripts/collect_truth_social.py      # or supply your own copy
+# place the news headline dataset in data/raw/ as well
+python scripts/freeze_alt_data.py           # regenerates alt/*_session_features.csv
+python scripts/freeze_alt_data.py --verify  # confirms they match the committed ones
+```
+
+`docs/scraping_notes.md` records each source's identity, row count and SHA-256, so a
+reader who obtains the same files can confirm they have the same bytes.
+
+## The market snapshot
+
+Committed, because the confirmatory result is not reproducible without it. Its
+licensing is an open question recorded in `../DATA_POLICY.md` rather than settled
+here.

@@ -1,0 +1,16 @@
+# E1 - cross-market group removed
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# 15 features: the other index, sector and currency series. If the result
+# depends on cross-market information, removing it should degrade it.
+
+meta:
+  id: E1
+  role: exploratory
+
+feature_selection:
+  exclude_groups: [cross_market]

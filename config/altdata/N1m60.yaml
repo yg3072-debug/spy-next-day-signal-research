@@ -1,0 +1,19 @@
+# N1m60 - leakage stress test, news shifted -60 sessions
+#
+# Protocol section 9.1. An overlay on the frozen config/p1.yaml, merged at run
+# time; the frozen file is never edited. Exploratory: this cannot change the P1
+# headline in either direction.
+#
+# News from session t+60 attached to session t. This is NOT a placebo: it is
+# a leakage stress test: it hands the model information it could not have had.
+# It is NOT a positive control -- future headlines are not guaranteed to predict
+# tomorrow either, so a null here does not establish that the pipeline is blind.
+
+meta:
+  id: N1m60
+  role: exploratory
+
+alt_data:
+  sources: [news]
+  include_columns: true
+  placebo_shift_sessions: -60

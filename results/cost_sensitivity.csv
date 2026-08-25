@@ -1,0 +1,6 @@
+cost_bps_per_side,positions_frozen_at_base_cost,ann_mean_excess,sharpe_excess
+0,True,0.0203035,0.22190442
+1,True,0.0035485403,0.038790685
+2,True,-0.013206419,-0.14435417
+5,True,-0.063471299,-0.69250968
+10,True,-0.1472461,-1.5932513

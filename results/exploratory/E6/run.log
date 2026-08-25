@@ -1,0 +1,27 @@
+config          config/p1.yaml  c219757bb47c087e...
+overlay         config/exploratory/E6.yaml  65fe5529e06e4f51...
+execution       primary_open_to_close
+modelling set   2865 sessions, 2015-03-31 to 2026-08-20
+initial train   1000
+outer steps     89  (step 21, retune every 12)
+candidates      4  over 4 fitted models
+
+  step   0  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 4/4
+  step  12  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 4/4
+  step  24  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 4/4
+  step  36  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 4/4
+  step  48  retune  chose random_forest|{'max_depth': 5, 'min_samples_leaf': 50}   eligible 2/4
+  step  60  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 20}   eligible 1/4
+  step  72  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 4/4
+  step  84  retune  chose random_forest|{'max_depth': 3, 'min_samples_leaf': 50}   eligible 4/4
+
+run complete in 1300.0s
+  oos_predictions.csv   1865 rows x 12 cols
+    columns             ['step', 'model', 'params', 'delta', 'p_short', 'p_flat', 'p_long', 'mu_hat', 'position', 'realised_o2c', 'financing', 'calibration_skipped']
+    dates               2019-03-21 to 2026-08-20
+    positions           {-1.0: np.int64(79), 0.0: np.int64(1266), 1.0: np.int64(520)}
+    calibration skipped 0 rows
+  selection_log.csv     8 retunes
+  candidate_diagnostics 32 rows (8 retunes x 4 candidates)
+  feature_stability.csv 45 distinct features selected
+  run_manifest.json     written

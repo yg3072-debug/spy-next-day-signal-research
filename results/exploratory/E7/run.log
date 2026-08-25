@@ -1,0 +1,27 @@
+config          config/p1.yaml  c219757bb47c087e...
+overlay         config/exploratory/E7.yaml  67b6a271dd9b0f4e...
+execution       primary_open_to_close
+modelling set   2865 sessions, 2015-03-31 to 2026-08-20
+initial train   1000
+outer steps     89  (step 21, retune every 12)
+candidates      8  over 8 fitted models
+
+  step   0  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 6/8
+  step  12  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 30}   eligible 7/8
+  step  24  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 7/8
+  step  36  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 7/8
+  step  48  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 30}   eligible 5/8
+  step  60  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 7/8
+  step  72  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 5/8
+  step  84  retune  chose lightgbm|{'num_leaves': 7, 'learning_rate': 0.03, 'min_child_samples': 60}   eligible 6/8
+
+run complete in 580.2s
+  oos_predictions.csv   1865 rows x 12 cols
+    columns             ['step', 'model', 'params', 'delta', 'p_short', 'p_flat', 'p_long', 'mu_hat', 'position', 'realised_o2c', 'financing', 'calibration_skipped']
+    dates               2019-03-21 to 2026-08-20
+    positions           {-1.0: np.int64(255), 0.0: np.int64(1028), 1.0: np.int64(582)}
+    calibration skipped 0 rows
+  selection_log.csv     8 retunes
+  candidate_diagnostics 64 rows (8 retunes x 8 candidates)
+  feature_stability.csv 45 distinct features selected
+  run_manifest.json     written

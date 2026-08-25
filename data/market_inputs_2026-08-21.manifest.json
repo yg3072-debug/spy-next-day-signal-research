@@ -1,0 +1,159 @@
+{
+  "snapshot_file": "market_inputs_2026-08-21.csv",
+  "sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
+  "frozen_at_utc": "2026-08-24T00:58:38.077948+00:00",
+  "requested_window": {
+    "start_inclusive": "2015-01-01",
+    "end": "2026-08-21"
+  },
+  "first_session": "2015-01-02",
+  "last_session": "2026-08-21",
+  "sessions": 2926,
+  "half_day_sessions": 23,
+  "columns": [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume",
+    "VIX",
+    "DXY",
+    "TNX",
+    "OIL",
+    "OIL_WTI",
+    "QQQ_Close",
+    "IWM_Close",
+    "DIA_Close",
+    "DGS3MO",
+    "DTB3",
+    "DGS2",
+    "DGS10",
+    "session_minutes",
+    "is_half_day"
+  ],
+  "calendar": "NYSE via pandas_market_calendars",
+  "adjustment": "yfinance auto_adjust=True (split and dividend adjusted OHLC; Volume unadjusted)",
+  "sources": {
+    "Yahoo Finance": [
+      "SPY",
+      "^VIX",
+      "DX-Y.NYB",
+      "^TNX",
+      "BZ=F",
+      "CL=F",
+      "QQQ",
+      "IWM",
+      "DIA"
+    ],
+    "FRED": [
+      "DGS3MO",
+      "DTB3",
+      "DGS2",
+      "DGS10"
+    ]
+  },
+  "alignment": {
+    "spine": "NYSE session calendar, not the intersection of series",
+    "gap_policy": "forward fill only, limit 5 sessions; never backward fill"
+  },
+  "package_versions": {
+    "python": "3.10.20",
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "yfinance": "0.2.66",
+    "pandas_market_calendars": "5.4.0"
+  },
+  "coverage": {
+    "SPY": {
+      "native_rows": 2926,
+      "filled": 0
+    },
+    "^VIX": {
+      "column": "VIX",
+      "native_rows": 2927,
+      "missing_on_nyse_sessions": 0,
+      "forward_filled": 0,
+      "unresolved": 0
+    },
+    "DX-Y.NYB": {
+      "column": "DXY",
+      "native_rows": 2928,
+      "missing_on_nyse_sessions": 2,
+      "forward_filled": 2,
+      "unresolved": 0
+    },
+    "^TNX": {
+      "column": "TNX",
+      "native_rows": 2925,
+      "missing_on_nyse_sessions": 1,
+      "forward_filled": 1,
+      "unresolved": 0
+    },
+    "BZ=F": {
+      "column": "OIL",
+      "native_rows": 2928,
+      "missing_on_nyse_sessions": 2,
+      "forward_filled": 2,
+      "unresolved": 0
+    },
+    "CL=F": {
+      "column": "OIL_WTI",
+      "native_rows": 2927,
+      "missing_on_nyse_sessions": 2,
+      "forward_filled": 2,
+      "unresolved": 0
+    },
+    "QQQ": {
+      "column": "QQQ_Close",
+      "native_rows": 2926,
+      "missing_on_nyse_sessions": 0,
+      "forward_filled": 0,
+      "unresolved": 0
+    },
+    "IWM": {
+      "column": "IWM_Close",
+      "native_rows": 2926,
+      "missing_on_nyse_sessions": 0,
+      "forward_filled": 0,
+      "unresolved": 0
+    },
+    "DIA": {
+      "column": "DIA_Close",
+      "native_rows": 2926,
+      "missing_on_nyse_sessions": 0,
+      "forward_filled": 0,
+      "unresolved": 0
+    },
+    "DGS3MO": {
+      "column": "DGS3MO",
+      "native_rows": 2910,
+      "missing_on_nyse_sessions": 21,
+      "forward_filled": 21,
+      "unresolved": 0
+    },
+    "DTB3": {
+      "column": "DTB3",
+      "native_rows": 2910,
+      "missing_on_nyse_sessions": 21,
+      "forward_filled": 21,
+      "unresolved": 0
+    },
+    "DGS2": {
+      "column": "DGS2",
+      "native_rows": 2910,
+      "missing_on_nyse_sessions": 21,
+      "forward_filled": 21,
+      "unresolved": 0
+    },
+    "DGS10": {
+      "column": "DGS10",
+      "native_rows": 2910,
+      "missing_on_nyse_sessions": 21,
+      "forward_filled": 21,
+      "unresolved": 0
+    }
+  },
+  "leading_rows_trimmed": 0,
+  "trailing_untraded_sessions_dropped": 1,
+  "fill_limit_sessions": 5
+}

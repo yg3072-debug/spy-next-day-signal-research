@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.ipynb -text
+*.csv text eol=lf
+*.pdf binary
+*.png binary

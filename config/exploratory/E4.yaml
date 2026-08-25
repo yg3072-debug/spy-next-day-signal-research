@@ -1,0 +1,17 @@
+# E4 - volume group removed
+#
+# An overlay on config/p1.yaml, merged at run time. The frozen file is never
+# edited: its SHA-256 is unchanged and this overlay carries its own, both recorded
+# in the run manifest. This specification is exploratory. It produces no headline
+# and cannot replace P1, whatever it shows.
+#
+# Only 3 features, so this is the ablation expected to change least. It is the
+# control on the other three: if every ablation moves the result by the same
+# amount, none of them is telling us about features.
+
+meta:
+  id: E4
+  role: exploratory
+
+feature_selection:
+  exclude_groups: [volume]

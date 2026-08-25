@@ -1,0 +1,68 @@
+name: tests
+
+on:
+  push:
+    branches: [main, v2-research]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history, so the guard below can inspect what a push actually adds
+      # rather than only the tip.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # The snapshot is committed, so nothing here touches the network. This fails
+      # loudly if the data, the configuration, or the hashes the protocol quotes
+      # have drifted apart.
+      - name: Verify the frozen configuration hash
+        run: python scripts/verify_hashes.py
+
+      - name: Verify the alternative-data checksums
+        run: python scripts/freeze_alt_data.py --verify
+
+      # The corpus, privacy and coverage contracts. Kept as a separate step from
+      # the rest of the suite so a failure here is unmistakable in the run summary:
+      # these are the rules that were broken silently before they existed.
+      - name: Data policy, privacy and coverage contracts
+        run: |
+          pytest tests/test_no_raw_corpus.py tests/test_no_private_data.py \
+                 tests/test_coverage_contracts.py -q
+
+      # Blocks a *new* commit from reintroducing a raw corpus path. It inspects only
+      # what this push or pull request adds; the point is to keep the sanitized
+      # history clean, not to re-scan history that was already dealt with.
+      - name: Reject newly added raw-corpus paths
+        run: |
+          set -eu
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "no comparable base; skipping incremental path check"
+            exit 0
+          fi
+          ADDED=$(git diff --name-only --diff-filter=A "$BASE" HEAD || true)
+          echo "files added by this change:"; echo "${ADDED:-  (none)}"
+          BLOCKED=$(printf '%s\n' "$ADDED" | grep -Ei \
+            'data/raw/|vendor/|local_data/|trump_archive|truth_social_sessions|news_headlines_sessions|empty_post_diagnosis\.csv|raw_posts|raw_headlines|transcript' \
+            || true)
+          if [ -n "$BLOCKED" ]; then
+            echo "::error::a raw-corpus path was added:"; echo "$BLOCKED"; exit 1
+          fi
+          echo "no raw-corpus paths added"
+
+      - name: Run the full test suite
+        run: pytest tests/ -q

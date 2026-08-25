@@ -1,0 +1,11 @@
+id,kind,oos_sessions,n_active,active_rate,ann_mean_excess,sharpe,terminal_wealth,shared_with_N0,sharpe_minus_N0,lo,hi
+N0,control arm — market features only,1247,407,0.326383,0.021776,0.212866,1.20282,,,,
+N1,"treatment arm — market + news, true alignment",1247,459,0.368083,-0.00622652,-0.0577798,1.04421,1247,-0.270646,-0.703727,0.105792
+N1p5,"placebo — news from t−5, stale but legitimate",1247,439,0.352045,-0.00655398,-0.0638491,1.04534,1247,-0.276715,-0.766955,0.115734
+N1p10,"placebo — news from t−10, stale but legitimate",1247,421,0.33761,-0.00532329,-0.0512205,1.051,1247,-0.264086,-0.722968,0.121195
+N1p20,"placebo — news from t−20, stale but legitimate",1247,420,0.336808,-0.00195825,-0.0191426,1.06953,1247,-0.232008,-0.703695,0.18605
+N1p60,"placebo — news from t−60, stale but legitimate",1247,434,0.348035,0.025058,0.241834,1.2217,1247,0.0289679,-0.301009,0.376762
+N1m5,"positive control — news from t+5, information it could not have had",1247,417,0.334403,-0.018431,-0.177495,0.985025,1247,-0.390361,-0.871027,0.000744955
+N1m10,"positive control — news from t+10, information it could not have had",1247,428,0.343224,0.00408235,0.0386878,1.10015,1247,-0.174178,-0.904915,0.518559
+N1m20,"positive control — news from t+20, information it could not have had",1247,343,0.27506,0.00387277,0.0422494,1.10647,1247,-0.170617,-0.720841,0.407932
+N1m60,"positive control — news from t+60, information it could not have had",1247,398,0.319166,-0.0104075,-0.103438,1.02658,1247,-0.316304,-0.925,0.201485
