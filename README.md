@@ -206,7 +206,7 @@ and then bounds what it cost: recomputed on the training window alone, all three
 judgements hold, and more strongly. What is claimed is the weaker and verifiable thing — the
 procedure is fixed, not the result.
 
-**102 tests** run on every commit, including two coverage contracts: every output the
+**95 tests** run on every commit, 400 checks once the per-file ones are parametrised, including two coverage contracts: every output the
 configuration declares must exist and carry its columns, and every trial identifier the
 protocol registers must have a status in the registry. Both exist because both gaps
 happened — silently — and neither failed anything at the time.
@@ -239,7 +239,7 @@ reports/    p1_confirmatory_result.md   the confirmatory result
 results/    benchmarks, the confirmatory run, every exploratory run, the registry
 scripts/    freeze_*, build_*, run_*, evaluate_*, verify_hashes, registry
 src/        features.py, altdata.py, execution.py, pipeline.py, stats.py, strategy.py
-tests/      102 checks
+tests/      95 tests, 400 checks
 ```
 
 ---
