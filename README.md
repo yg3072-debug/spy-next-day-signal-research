@@ -26,6 +26,15 @@ on trust.
 > was discarded. That last one is in there because a number that was looked at counts,
 > and leaving it out would quietly shorten the ruler.
 
+> **Repository history.** History was sanitized after the confirmatory run to remove
+> inadvertently committed third-party raw text and local metadata. The research
+> configuration, input values used by the model, daily OOS predictions, positions,
+> return components, and reported conclusions were not changed — verified field by
+> field in [`results/sanitization_equivalence.json`](results/sanitization_equivalence.json).
+> What the repository distributes and what it withholds is stated in
+> [`DATA_POLICY.md`](DATA_POLICY.md); personal-information handling is in
+> [`PRIVACY.md`](PRIVACY.md).
+
 ---
 
 ## The question
