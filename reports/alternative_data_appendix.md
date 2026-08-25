@@ -71,8 +71,10 @@ with different trade-offs. It is a look-ahead, applied to a third of the sample.
 The mapping is verified directly rather than through the features that depend on
 it. `tests/test_altdata.py` pins the right-closed boundary at the close, the 13:00
 close on half days, both sides of the March 2024 daylight-saving transition,
-weekend and holiday roll-forward, and — on the committed snapshot — that **no post
-is dated after the close of the session it is attached to**.
+weekend and holiday roll-forward, and — on the frozen study snapshot, which is not
+distributed with this repository — that **no post is dated after the close of the
+session it is attached to**. That last check is skipped unless you supply the
+snapshot; the boundary assertions around it run on any input with the right schema.
 
 ### The timezone trap
 

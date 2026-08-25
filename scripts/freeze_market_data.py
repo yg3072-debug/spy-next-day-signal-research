@@ -21,8 +21,14 @@ multiplicative adjustment factor, since the factor cancels in the ratio.
 
 Usage
 -----
-    python scripts/freeze_market_data.py                 # write the snapshot
-    python scripts/freeze_market_data.py --verify        # check an existing one
+    python scripts/freeze_market_data.py                 # write a NEW snapshot
+    python scripts/freeze_market_data.py --verify        # check one you supply
+
+The snapshot this study froze is not distributed with the repository: the prices
+come from a vendor whose terms do not permit redistribution. `--verify` therefore
+checks a snapshot **you** hold against a manifest **you** hold, and reports that
+nothing is present if you hold neither. Running without `--verify` downloads a new
+vintage, which is a new dataset and a new research run, not a reproduction.
 """
 
 from __future__ import annotations
@@ -251,7 +257,16 @@ def write_snapshot(frame: pd.DataFrame, meta: dict, outdir: Path) -> tuple[Path,
 def verify(outdir: Path) -> int:
     manifests = sorted(outdir.glob("market_inputs_*.manifest.json"))
     if not manifests:
-        print("No manifest found.")
+        # Expected on a public clone: the snapshot is licensed and is not
+        # redistributed, so there is nothing here to check. Say that, rather than
+        # leaving a reader to wonder whether the check failed or never ran.
+        print("No snapshot manifest found in "
+              f"{outdir}.\n"
+              "The market snapshot is not distributed with this repository. "
+              "--verify checks a\nsnapshot you supply: place the CSV and its "
+              "manifest in data/ and run this again.\n"
+              "The recorded identifier of the historical frozen snapshot is in "
+              "docs/freeze_record.md.")
         return 1
     ok = True
     for mpath in manifests:

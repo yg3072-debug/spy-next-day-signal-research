@@ -26,10 +26,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # The snapshot is committed, so nothing here touches the network. This fails
-      # loudly if the data, the configuration, or the hashes the protocol quotes
-      # have drifted apart.
-      - name: Verify the frozen configuration hash
+      # Two different claims, kept apart deliberately.
+      #
+      # The frozen configuration is committed, so CI recomputes its digest from the
+      # bytes in the checkout and compares it against the digest committed beside
+      # it. That is a real verification and it fails loudly.
+      #
+      # The market snapshot is licensed and is NOT distributed here, so its bytes
+      # cannot be rehashed from a public clone. CI therefore only checks that every
+      # file recording the snapshot's identifier records the same one, and the step
+      # prints NOT VERIFIED so the weaker claim is never read as the stronger one.
+      # A user who supplies their own legally obtained snapshot and manifest gets
+      # byte verification automatically.
+      #
+      # Nothing in this job reaches the network.
+      - name: Verify published freeze records
         run: python scripts/verify_hashes.py
 
       - name: Verify the alternative-data checksums

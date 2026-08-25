@@ -332,6 +332,9 @@ BUILDERS = [
 def build_features(snapshot: pd.DataFrame) -> tuple[pd.DataFrame, list[Feature]]:
     """Build every candidate feature from a frozen snapshot.
 
+    The study's own snapshot is licensed and is not distributed with this
+    repository; this function takes whatever frame it is handed.
+
     Returns the feature frame and the metadata registry, in registration order.
     """
     REGISTRY.clear()

@@ -4,11 +4,27 @@ When each input is published, when a strategy running in real time could actuall
 and every transformation applied between the two. A field may only enter a feature for
 session *t* if the whole pipeline below is complete before the decision point for *t*.
 
-**Snapshot:** `data/market_inputs_2026-08-21.csv`
+**Snapshot:** `data/market_inputs_2026-08-21.csv` — **not distributed with this repository**
 **SHA-256:** `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a`
 **Sessions:** 2,926 — 2015-01-02 to 2026-08-21 (11.6 years), 23 early closes
-**Manifest:** `data/market_inputs_2026-08-21.manifest.json`
-**Reproduce:** `python scripts/freeze_market_data.py` · **Check:** `... --verify`
+**Manifest:** `data/market_inputs_2026-08-21.manifest.json` — also not distributed
+**Reproduce:** `python scripts/freeze_market_data.py` downloads a *new* vintage
+**Check:** `... --verify` verifies a snapshot **you** supply, against a manifest you supply
+
+The snapshot named above is the historical frozen input P1 ran on. Its prices come from a
+vendor whose terms do not permit redistribution, so the file and its manifest are absent
+from the public repository and the digest above cannot be recomputed from a public clone.
+What is published is the identifier, the schema, the method, the code and the summary
+results. `verify_hashes.py` reports the snapshot as `NOT VERIFIED` and checks only that
+every file recording the identifier records the same one; supply the CSV and its manifest
+and it upgrades to a real byte check.
+
+**Rates.** P1 obtained its Treasury series through FRED, and that is a historical fact
+recorded as one below. The default download path for anyone running this code now is the
+Federal Reserve Board's H.15 release, a United States federal government work in the public
+domain, committed as `data/treasury_rates_h15_2026-08-25.csv`. Within the modelling window
+the two agree at every session. That file is for testing and independent rebuilding; it is
+**not** the frozen P1 input.
 
 ---
 

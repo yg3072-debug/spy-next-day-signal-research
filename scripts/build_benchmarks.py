@@ -66,6 +66,11 @@ TRADING_DAYS = 252
 def load_snapshot(directory: str | None = None) -> tuple[pd.DataFrame, dict]:
     """The frozen snapshot, or a named vintage directory for E21.
 
+    These are not distributed with this repository: the prices are licensed vendor
+    data. Supply your own snapshot in data/ to run this. There is deliberately no
+    fallback to the synthetic test fixture -- a run that silently used invented
+    prices and reported a Sharpe ratio would be worse than one that failed to start.
+
     Defaults to data/ and therefore to the frozen snapshot. A vintage is passed in
     explicitly; nothing picks one up by accident, and E21's download is written
     somewhere the default glob cannot see.

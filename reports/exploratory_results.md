@@ -140,7 +140,9 @@ against it. It was pre-registered in §7.2, omitted when the overlays were writt
 and run afterwards; the registry records `delay_reason=implementation_omission`
 and `headline_eligible=false`.
 
-The frozen snapshot was not touched. The second vintage was written to its own
+The frozen snapshot was not touched. Both snapshots are licensed vendor data and are
+not distributed with this repository; only their SHA-256s are published.
+The second vintage was written to its own
 directory with its own SHA-256 (`020d9ad9…` against the frozen `9b337ca7…`), with
 the end date pinned so it covers exactly the same 2,926 sessions and no later ones.
 The two were compared field by field **before** the run, and the run proceeded

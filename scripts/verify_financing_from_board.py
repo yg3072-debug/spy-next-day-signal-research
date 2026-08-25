@@ -15,6 +15,9 @@ Board rate file, the exchange calendar, and the formulas in the protocol:
 
 and compared, session by session, with the values the published results carry.
 
+The frozen snapshot itself is not distributed with this repository; what is
+compared here are the financing fields the published results carry.
+
 One difference is expected and is not a failure: the frozen snapshot captured
 2026-08-21's rates while they were provisional, and the Board has since revised
 them. That date lies outside the modelling window. Any difference on any other

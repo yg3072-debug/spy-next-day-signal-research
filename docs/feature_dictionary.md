@@ -4,8 +4,13 @@ Generated from the metadata registry in `src/features.py` by `python scripts/bui
 
 Every feature is a function of information available at or before the close of session *t*. The target is the next session's open-to-close simple return, `Close_{t+1} / Open_{t+1} - 1`.
 
-**Snapshot:** `market_inputs_2026-08-21.csv` · **SHA-256:** `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a`
+**Snapshot:** `market_inputs_2026-08-21.csv` — **not distributed with this repository**
+**SHA-256:** `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a`
 **Candidates:** 81 across 13 hypothesis groups · **Sessions:** 2,926
+
+The snapshot named above is the historical frozen input. Its prices are licensed and are not
+redistributed here; see `data_availability.md`. The digest is a recorded identifier, not
+something a public clone can recompute.
 
 `Adj-inv` marks a feature that is unchanged when the whole price history is rescaled by a constant, which is what a dividend revision does. `Lag` is any publication delay beyond the session close, in sessions. Coverage is the share of sessions with a value once the warm-up window has passed.
 

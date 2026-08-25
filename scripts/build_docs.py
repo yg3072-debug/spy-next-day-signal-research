@@ -90,9 +90,15 @@ def write_feature_dictionary(features: pd.DataFrame, registry, manifest) -> Path
         "",
         target_note,
         "",
-        f"**Snapshot:** `{manifest['snapshot_file']}` · **SHA-256:** `{manifest['sha256']}`",
+        f"**Snapshot:** `{manifest['snapshot_file']}` — **not distributed with this "
+        "repository**",
+        f"**SHA-256:** `{manifest['sha256']}`",
         f"**Candidates:** {len(registry)} across {len(GROUP_TITLES)} hypothesis groups · "
         f"**Sessions:** {len(features):,}",
+        "",
+        "The snapshot named above is the historical frozen input. Its prices are licensed "
+        "and are not redistributed here; see `data_availability.md`. The digest is a "
+        "recorded identifier, not something a public clone can recompute.",
         "",
         "`Adj-inv` marks a feature that is unchanged when the whole price history is rescaled "
         "by a constant, which is what a dividend revision does. `Lag` is any publication delay "
@@ -181,7 +187,12 @@ def refresh_availability_header(manifest) -> Path:
     """Keep the snapshot identifiers in the availability note current."""
     path = ROOT / "docs" / "data_availability.md"
     text = path.read_text(encoding="utf-8")
-    text = re.sub(r"\*\*Snapshot:\*\* `[^`]+`", f"**Snapshot:** `data/{manifest['snapshot_file']}`", text, count=1)
+    # The "not distributed" clause is part of the replacement, not something a
+    # regeneration is allowed to quietly drop: this header is the first thing a
+    # reader sees, and without the clause it asserts the file is here.
+    text = re.sub(r"\*\*Snapshot:\*\* `[^`]+`(?: — [^\n]*)?",
+                  f"**Snapshot:** `data/{manifest['snapshot_file']}` — "
+                  "**not distributed with this repository**", text, count=1)
     text = re.sub(r"\*\*SHA-256:\*\* `[0-9a-f]{64}`", f"**SHA-256:** `{manifest['sha256']}`", text, count=1)
     path.write_text(text, encoding="utf-8")
     return path

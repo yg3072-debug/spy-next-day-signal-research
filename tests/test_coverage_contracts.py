@@ -170,3 +170,105 @@ def test_documents_quote_the_registrys_actual_path_count():
                 f"{name} says {f} families; the registry has {families}"
             )
     assert seen >= 3, f"expected the count to be quoted in each report, found {seen}"
+
+
+# ---------------------------------------------------------------------------
+# Data-availability honesty
+# ---------------------------------------------------------------------------
+
+# Phrases that assert the licensed market snapshot ships with this repository.
+# It does not, and it will not: the prices come from a vendor whose terms forbid
+# redistribution. A document that says otherwise sends a reader looking for a file
+# that is not there and misstates what the repository can prove about its own
+# inputs. The workflow comment "The snapshot is committed, so nothing here touches
+# the network" survived the removal by weeks and is what this guard exists to stop
+# recurring.
+FORBIDDEN_AVAILABILITY_CLAIMS = (
+    r"snapshot is committed",
+    r"committed snapshot",
+    r"snapshot,? (?:is |which is )?(?:committed|included|shipped|bundled)",
+    r"the snapshot ships",
+)
+
+# "frozen study snapshot" is legitimate history -- the study did run on a real
+# snapshot and saying so is a fact, not a distortion. It is admissible only where
+# the same document also states the file is not distributed, so a reader is never
+# left with the identifier and no notice of its absence.
+HISTORICAL_PHRASE = re.compile(r"frozen (?:study )?snapshot", re.I)
+# \s+ rather than a literal space: these documents wrap, and "not\ndistributed"
+# is the same statement as "not distributed". Requiring one space made the guard
+# report a compliant file as an offender.
+NOT_DISTRIBUTED = re.compile(
+    r"not\s+(?:distributed|redistributed|published|committed|present|included)"
+    r"|NOT\s+DISTRIBUTED|does\s+not\s+(?:ship|include)", re.I)
+
+PUBLIC_TEXT_SUFFIXES = (".md", ".yml", ".yaml", ".py")
+SKIP_DIRS = {".git", "_archive", "node_modules", "__pycache__"}
+
+# This file states the forbidden phrases in order to forbid them, and asserts on
+# one of them to prove the guard fires. Excluding it is not a loophole in the
+# rule: it is the one file whose job is to contain the string.
+SELF = Path(__file__).name
+
+
+def _public_text_files():
+    # Skip directories are matched against the path RELATIVE to the repository
+    # root. Matching absolute parts made this scan zero files whenever the
+    # checkout happened to sit under a directory that shared one of these names,
+    # which is exactly how a guard ends up passing while watching nothing.
+    for path in sorted(ROOT.rglob("*")):
+        if not path.is_file() or path.suffix not in PUBLIC_TEXT_SUFFIXES:
+            continue
+        if any(part in SKIP_DIRS for part in path.relative_to(ROOT).parts):
+            continue
+        if path.name == SELF:
+            continue
+        yield path
+
+
+def test_the_public_text_scan_is_not_empty():
+    """The scan above is only meaningful if it reaches the documents."""
+    files = list(_public_text_files())
+    assert len(files) > 20, f"expected the repository's documents, found {len(files)}"
+    names = {p.name for p in files}
+    assert "README.md" in names
+
+
+@pytest.mark.parametrize("pattern", FORBIDDEN_AVAILABILITY_CLAIMS)
+def test_no_document_claims_the_market_snapshot_is_distributed(pattern):
+    regex = re.compile(pattern, re.I)
+    offenders = []
+    for path in _public_text_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for match in regex.finditer(text):
+            line = text[:match.start()].count("\n") + 1
+            offenders.append(f"{path.relative_to(ROOT)}:{line}  {match.group(0)!r}")
+    assert not offenders, (
+        "these claim the licensed market snapshot is distributed with this "
+        "repository:\n  " + "\n  ".join(offenders))
+
+
+def test_the_guard_would_catch_the_claim_it_was_written_for(tmp_path):
+    """A guard that matches nothing is worse than no guard.
+
+    An earlier regex in this suite contained a `\b` that Python read as a
+    backspace, so it silently matched nothing and passed for months. This asserts
+    the patterns actually fire on the exact sentence that was in the workflow.
+    """
+    offending = ("# The snapshot is committed, so nothing here touches the "
+                 "network.")
+    assert any(re.search(p, offending, re.I) for p in FORBIDDEN_AVAILABILITY_CLAIMS)
+
+
+def test_historical_snapshot_references_say_it_is_not_distributed():
+    """`frozen snapshot` may be written, but not without the caveat nearby."""
+    offenders = []
+    for path in _public_text_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if not HISTORICAL_PHRASE.search(text):
+            continue
+        if not NOT_DISTRIBUTED.search(text):
+            offenders.append(str(path.relative_to(ROOT)))
+    assert not offenders, (
+        "these refer to the frozen snapshot without stating anywhere that it is "
+        "not distributed:\n  " + "\n  ".join(offenders))

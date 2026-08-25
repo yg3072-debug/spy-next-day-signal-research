@@ -265,9 +265,21 @@ python scripts/run_exploratory_batch.py --dir config/altdata --out results/altda
 python scripts/evaluate_news_increment.py
 ```
 
-The snapshot is committed, so nothing above touches the network. `freeze_market_data.py`
-without `--verify` re-downloads and writes a new snapshot; that is a new data vintage and a new
-research run, not a reproduction.
+**The market snapshot is not distributed with this repository.** `market_inputs_2026-08-21.csv`
+is the file the frozen procedure names and the input P1 actually ran on, but the prices come
+from a vendor whose terms do not permit redistribution. What is published is its SHA-256, its
+schema, the method, the code, and the summary results — enough to audit the procedure, not
+enough to skip acquiring the data. Running the commands above therefore requires you to obtain
+a market snapshot yourself, legally, and place it in `data/`.
+
+`freeze_market_data.py --verify` checks a snapshot you supply against its manifest; with no
+snapshot present there is nothing for it to check. Without `--verify` it downloads and writes a
+*new* snapshot, which is a new data vintage and a new research run, not a reproduction — Yahoo
+Finance revises adjusted history after corporate actions, so a later download is a different
+dataset.
+
+The synthetic fixture in `tests/fixtures/` is a seeded random walk that lets the test suite run
+without any vendor data. It is **not** the frozen P1 input and is never used for a research run.
 
 Dependencies are pinned to exact versions. Yahoo Finance revises adjusted history after
 corporate actions, and library defaults change between releases; a study that downloads at

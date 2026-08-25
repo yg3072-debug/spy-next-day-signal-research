@@ -5,9 +5,8 @@ What is here, what is not, and where the missing pieces come from.
 ## Committed
 
 ```
-market_inputs_2026-08-21.csv        the frozen market snapshot, 2,926 NYSE sessions
-market_inputs_2026-08-21.manifest.json   its SHA-256, coverage and fill accounting
-vintage_e21/                        a second download of the same window (E21)
+treasury_rates_h15_2026-08-25.csv        Federal Reserve Board H.15 rates, public domain
+treasury_rates_h15_2026-08-25.manifest.json   its SHA-256, source URL and citation
 alt/truth_social_session_features.csv    per-session NLP aggregates
 alt/news_session_features.csv            per-session NLP aggregates
 alt/alt_data.manifest.json          source checksums, row counts, audit counts
@@ -21,12 +20,26 @@ in a session does not reconstruct the sentences.
 ## Not committed
 
 ```
+market_inputs_2026-08-21.csv        the frozen market snapshot, 2,926 NYSE sessions
+market_inputs_2026-08-21.manifest.json   its SHA-256, coverage and fill accounting
+vintage_e21/                        a second download of the same window (E21)
 raw/          the two text corpora, gitignored
 ../vendor/    the Loughran-McDonald dictionary, gitignored
 ```
 
+`market_inputs_2026-08-21.csv` is the filename of the historical frozen input — the file
+P1 actually ran on. **It is not distributed here**, because the prices come from a vendor
+whose terms do not permit redistribution. Its SHA-256 is recorded in `config/p1.yaml`,
+`docs/freeze_record.md` and four other places, so a reader who obtains the same vintage
+independently can confirm they hold the same bytes. A full re-run requires you to acquire
+market data yourself, legally.
+
 Whether to redistribute a publisher's content is that publisher's decision. See
 `../DATA_POLICY.md`.
+
+`tests/fixtures/market_inputs_synthetic.csv` is a seeded random walk with the same schema.
+It exists so the test suite runs without vendor data. It is **not** the frozen P1 input,
+and `load_snapshot()` refuses to fall back to it.
 
 To rebuild the aggregates from raw:
 

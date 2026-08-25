@@ -127,11 +127,12 @@ def test_a_session_with_no_documents_is_kept_with_zero_counts():
     assert out.notna().all().all()
 
 
-# ------------------------------------------------------- the committed snapshot
+# ------------------------------------------- the corpus, when a user supplies it
 
 @pytest.mark.skipif(not (ALT / "truth_social_sessions.csv").exists(),
-                    reason="alternative-data snapshot not built")
-def test_committed_snapshot_has_no_text_dated_after_its_session_close():
+                    reason="alternative-data corpus not present; it is not "
+                           "distributed with this repository")
+def test_supplied_corpus_has_no_text_dated_after_its_session_close():
     """The invariant the whole mapping exists to guarantee.
 
     Every post must have been published at or before the close of the session it is

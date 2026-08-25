@@ -17,6 +17,27 @@ Three hash conventions appear below and are never mixed:
 | raw SHA-256 | the file's bytes at that commit, unnormalised |
 | LF-normalised SHA-256 | CRLF collapsed to LF first; what `verify_hashes.py` checks |
 
+## The market snapshot
+
+```
+market_inputs_2026-08-21.csv
+9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a
+```
+
+**Recorded identifier of the undistributed historical snapshot; the bytes cannot be**
+**verified from a public clone.**
+
+This is the file the frozen procedure names, and it is the input P1 actually ran on.
+It is not in this repository and will not be: the prices come from a vendor whose
+terms do not permit redistribution. The digest is kept so that a reader who obtains
+the same vintage independently can confirm they hold the same bytes, and so that the
+identifier the repository quotes in six places can be checked for internal
+consistency. Neither of those is a verification of the original data, and
+`verify_hashes.py` prints `NOT VERIFIED` rather than implying otherwise.
+
+Supplying `data/market_inputs_2026-08-21.csv` together with its manifest turns that
+consistency check back into a byte check automatically.
+
 ## `legacy-v1` → `legacy-v1-sanitized`
 
 | | |

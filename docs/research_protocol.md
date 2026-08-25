@@ -115,10 +115,18 @@ banking episode, a low-volatility 2024, and a volatility pickup in 2025.
 ### 1.2 Sources and freeze
 
 ```
-data/market_inputs_2026-08-21.csv
+data/market_inputs_2026-08-21.csv          NOT DISTRIBUTED WITH THIS REPOSITORY
 SHA-256   9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a
-Rebuild   python scripts/freeze_market_data.py       Verify   … --verify
+Rebuild   python scripts/freeze_market_data.py    downloads a NEW vintage
+Verify    … --verify                              checks a snapshot you supply
 ```
+
+This is the file the frozen procedure names and the input P1 ran on. The prices are
+licensed and cannot be redistributed, so neither the CSV nor its manifest is present
+here and the digest above cannot be recomputed from a public clone. It is a recorded
+identifier: a reader who obtains the same vintage independently can confirm they hold
+the same bytes. `verify_hashes.py` reports the snapshot as `NOT VERIFIED` and checks
+only that the six files recording the identifier record the same one.
 
 | Source | Series |
 |---|---|
