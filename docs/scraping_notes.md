@@ -12,13 +12,44 @@ drift apart.
 | | |
 |---|---|
 | Content | S&P 500 news headlines with the index close on the same date |
+| Columns | `Title`, `Date`, `CP` |
 | Span in file | 2008-01-02 → 2024-03-04 |
 | Rows in file | 19,127 |
+| File | `sp500_headlines_2008_2024.csv`, 1,569,226 bytes |
+| SHA-256 | `45d72b46859dd8a3ed67f2895dc0a73de99f9cd817c0b2f07317cf4594688823` |
+| **Origin** | **not established — see below** |
+| **Licence** | **unknown** |
 | Exact duplicate rows | **974**, removed |
 | Rows after deduplication | 18,153 |
 | Unparseable dates | 0 |
 | Empty titles | 0 |
 | Overlap with the modelling set | **2,247 sessions**, of which 2,182 carry at least one headline and **65 carry none** |
+
+### Provenance could not be established
+
+The protocol states that this source's licence and download path are recorded here.
+**They are not, because they could not be recovered**, and saying so is the only
+honest way to close the gap.
+
+What is verifiable is above: the exact file, its size, its SHA-256, its columns, its
+row count and its date range. Anyone holding a file with that digest has the same
+bytes this study used.
+
+What is not verifiable is where it came from. No download record, licence file or
+source note survives alongside it. A publicly listed dataset with a matching title
+and approximate row count exists, but its published column names and file size do
+not match this file and its licence could not be read, so **it is recorded as a
+possible origin and not as the origin**, and no licence is claimed from it.
+
+**Consequence, stated rather than buried.** The news layer (§9.1) is **not
+independently reproducible from source**: a reader cannot obtain the same input with
+confidence, only check that a file they already hold matches the recorded digest.
+Its results are reported as an exploratory finding whose data provenance is
+incomplete and should be discounted accordingly. They change nothing about the
+confirmatory result, which uses no text data at all.
+
+The Truth Social layer does not have this problem: its collector is in this
+repository, its source is a named public archive, and the collection is repeatable.
 
 **Deduplication is on the whole row.** 974 rows are byte-identical to another row —
 same headline, same date, same close. Keeping them would weight those headlines
@@ -77,10 +108,12 @@ naming, because both look like anomalies until you know where they came from.
 
 **The twenty rows with no timezone label are exactly the twenty the repair pass
 re-fetched.** `repair_failed_rows.py` extracts the timestamp with a parser that
-does not carry the `EDT`/`EST` suffix through, so those rows — status ids 26994
-to 27013, all on 2024-10-03 and 04 — arrive without a zone. They are localised
-through `America/New_York`'s own daylight-saving rule, which for early October is
-EDT, and counted separately in the manifest.
+does not carry the `EDT`/`EST` suffix through, so those rows arrive without a
+zone. All twenty fall on two consecutive early-October dates in 2024 and are
+localised through `America/New_York`'s own daylight-saving rule, which for that
+period is EDT. They are counted separately in the manifest. Their identifiers are
+not listed here: a record identifier is a key to the corpus this project does not
+redistribute.
 
 **Mojibake is nearly absent because the crawler already repaired it.**
 `crawl_and_scrape_archive.py` applies a latin-1 → UTF-8 round trip, up to twice
@@ -215,11 +248,12 @@ that the decision is a decision.
 
 ### Near-duplicate reposts are kept
 
-Posts 23853 and 23854 are four minutes apart and differ in one word — *"As me move
-forward"* corrected to *"As we move forward"*. Deduplication is on `status_id`, so
-both survive. That is deliberate: a deleted-and-corrected repost is two acts of
-posting, and collapsing them would require a similarity threshold chosen by
-somebody, which is a researcher degree of freedom in exchange for almost nothing.
+A manually inspected near-duplicate pair differed by one corrected token; both
+records were retained because deduplication uses the source record identifier. That
+is deliberate: a deleted-and-corrected repost is two acts of posting, and collapsing
+them would require a similarity threshold chosen by somebody, which is a researcher
+degree of freedom in exchange for almost nothing. Neither the identifiers nor the
+text are reproduced here.
 
 ---
 
@@ -263,10 +297,32 @@ bespoke part under separate names is the point.
 
 ---
 
+## 4. Where the inputs live
+
+None of the raw inputs is committed. Three environment variables control where the
+scripts look, each defaulting to a gitignored directory inside the repository:
+
+| Variable | Default | Holds |
+|---|---|---|
+| `LM_DICTIONARY` | `vendor/LM_MasterDictionary.csv` | the Loughran–McDonald dictionary, fetched by `scripts/fetch_lexicon.py` |
+| `ALT_DATA_SOURCE` | `data/raw/` | `trump_archive_full_cleaned.csv` and `sp500_headlines_2008_2024.csv` |
+| `SCRAPER_CONTACT` | unset | an address to identify the crawler in its User-Agent, if you run `diagnose_empty_posts.py` |
+
+Paths recorded in `data/alt/alt_data.manifest.json` are relative to the repository.
+An absolute path would record whose machine built the file, which is no use to a
+reader.
+
+---
+
 ## 4. Compliance
 
 Both sources are publicly accessible archives of published material. Collection was
-rate-limited and read-only, no authentication was used or bypassed, and no
-non-public content was accessed. Only text that the publishers made public is
+rate-limited and read-only; **no user credentials, authentication tokens or
+user-provided authentication cookies were supplied**, nothing was bypassed, and no
+non-public content was accessed.
+
+As of 2026-08-25, no Terms of Service link was found on the archive's homepage,
+About page, FAQ, or common policy paths. Its `robots.txt` declares no disallowed
+paths. **Neither is legal permission, and neither grants redistribution rights.** Only text that the publishers made public is
 retained. Post identifiers and source URLs are kept so that any row can be traced
 to its origin.

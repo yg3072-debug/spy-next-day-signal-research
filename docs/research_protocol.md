@@ -743,7 +743,7 @@ choice, not an oversight.
 
 - Sentiment uses the **Loughran–McDonald** financial lexicon (Loughran and McDonald 2011,
   *Journal of Finance*), which is citable and reproducible, rather than a bespoke word list
-- Source, licence and download path are recorded in `docs/scraping_notes.md`
+- Source, licence and download path are recorded in `docs/scraping_notes.md` where they could be established. **For the headline corpus they could not**: the file's digest, size, columns and row count are recorded, the origin is not, and §9.1 is consequently marked as not independently reproducible from source. The confirmatory procedure uses no text data and is unaffected
 - The raw headline file contains exact duplicate rows; deduplication is explicit and counted
 - **Availability assumption, stated because it cannot be verified from the data**: the headline
   file carries dates without times, so a headline dated D is treated conservatively as fully
@@ -1022,7 +1022,15 @@ block and changes across blocks, and that each out-of-sample session appears exa
 further nine cover the exploratory group's second execution specification, taking the suite to
 63; one of them pins the primary specification's refactored implementation against the committed
 run and requires it to agree to the last bit. **No protocol text, configuration value, model, or
-reported figure changed.** They are recorded here
+reported figure changed.** The suite has since grown further, to 95 test functions and
+400 collected checks, as guards were added for things that had already gone wrong:
+the frozen configuration's digest failing on a fresh clone, a promised output never
+being written, a pre-registered trial never being run, third-party document text
+reaching the repository, and a personal address reaching a crawler's User-Agent.
+Each of those is recorded in `docs/errata.md` with what it affected. **None of them
+changed a research value**, and the equivalence proofs in
+`results/reproduction_equivalence.json` and `results/sanitization_equivalence.json`
+are what establishes that rather than assert it. They are recorded here
 because the alternative — a suite that silently grows while the document keeps quoting the frozen
 count — makes the freeze harder to check rather than easier. The state at freeze is tagged
 `protocol-v6-frozen` and can be diffed.

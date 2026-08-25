@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-from src.digest import sha256_of  # noqa: E402  (canonical, line-ending independent)
+from src.digest import sha256_bytes, sha256_of  # noqa: E402  (line-ending independent)
 
 
 def main() -> int:
@@ -55,7 +55,32 @@ def main() -> int:
     # digest behind in one table, which is exactly the defect a reader checking the
     # freeze would find. Every hash-like token in the protocol must resolve to a
     # committed artefact, not merely one of them.
-    known = {actual, sha256_of(sorted(ROOT.glob("data/market_inputs_*.csv"))[-1])}
+    # Canonical digests, plus the same artefacts hashed verbatim. The second set
+    # exists because the protocol's erratum has to quote the digest it superseded in
+    # order to explain the change, and a scan that forbade that would force the
+    # document to describe a hash it is not allowed to write down. A superseded
+    # digest is admissible only when it still resolves to a committed artefact under
+    # the older convention -- which is checked here, not asserted -- so an arbitrary
+    # stale hash is still caught.
+    artefacts = [ROOT / "config" / "p1.yaml",
+                 sorted(ROOT.glob("data/market_inputs_*.csv"))[-1]]
+    known = {sha256_of(a) for a in artefacts}
+
+    # A superseded digest is one of these artefacts under the older convention: the
+    # same content with CRLF terminators. It is CONSTRUCTED from the canonical bytes
+    # rather than read off disk, because on a Linux checkout the working copy is
+    # already LF and the older digest could not otherwise be reproduced at all --
+    # which is exactly how this check passed locally and failed in CI.
+    CR, LF = b"\x0d", b"\x0a"
+    superseded = set()
+    for a in artefacts:
+        canonical = a.read_bytes().replace(CR + LF, LF)
+        superseded.add(sha256_bytes(canonical.replace(LF, CR + LF), normalise=False))
+    superseded -= known
+    if superseded:
+        print(f"note superseded digests admissible, reconstructed from the committed "
+              f"content: {', '.join(sorted(d[:8] for d in superseded))}")
+    known |= superseded
     # At least one a-f, so an eight-digit date in backticks is not mistaken for a digest.
     quoted = {m for m in re.findall(r"`([0-9a-f]{8,64})…?`", protocol) if re.search(r"[a-f]", m)}
     for token in sorted(quoted):

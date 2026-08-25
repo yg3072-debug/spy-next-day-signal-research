@@ -25,3 +25,32 @@ results/smoke/
 # committed, along with the source checksums, so the derivation stays verifiable.
 data/alt/truth_social_sessions.csv
 data/alt/news_headlines_sessions.csv
+
+# Third-party inputs, not redistributed. scripts/fetch_lexicon.py retrieves the
+# dictionary and verifies its checksum; docs/scraping_notes.md names both text
+# sources. Override the locations with LM_DICTIONARY and ALT_DATA_SOURCE.
+vendor/
+data/raw/
+
+# Raw third-party corpora and any per-record text. Never committed: whether to
+# redistribute third-party content is the publisher's decision, not this project's.
+# The session-level aggregates the study consumes ARE committed.
+data/raw/**
+vendor/**
+local_data/**
+**/trump_archive_raw.csv
+**/trump_archive_partial.csv
+**/trump_archive_full_cleaned.csv
+**/truth_social_sessions.csv
+**/news_headlines_sessions.csv
+**/empty_post_diagnosis.csv
+results/empty_post_diagnosis.csv
+**/*raw_posts*
+**/*raw_headlines*
+**/*transcript*
+
+# Market snapshots are not distributed: they derive from a vendor whose terms
+# restrict redistribution. scripts/freeze_market_data.py obtains one locally.
+data/market_inputs_*.csv
+data/market_inputs_*.manifest.json
+data/vintage_*/

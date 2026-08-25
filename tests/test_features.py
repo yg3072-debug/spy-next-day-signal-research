@@ -25,9 +25,11 @@ EXPECTED_FEATURE_COUNT = 81
 
 
 @pytest.fixture(scope="module")
-def snapshot():
-    frame, _ = load_snapshot()
-    return frame
+def snapshot(market_frame):
+    # The snapshot is not distributed; `market_frame` supplies a real one when the
+    # user has obtained it and the synthetic fixture otherwise. What this file
+    # asserts holds on either, because it is about the code.
+    return market_frame
 
 
 @pytest.fixture(scope="module")
@@ -168,7 +170,14 @@ def test_declared_adjustment_invariance_holds(snapshot, built):
         ok = np.isfinite(x) & np.isfinite(y)
         if ok.sum() == 0:
             continue
-        same = np.allclose(x[ok], y[ok], rtol=1e-9, atol=1e-12)
+        # atol is 1e-10, not 1e-12. Several of these features are dimensionless
+        # ratios that pass through zero, and at zero the relative term vanishes
+        # and the absolute tolerance is the whole budget. Rescaling a price
+        # history and recomputing a rolling standard deviation moves such a value
+        # by about 1e-12 in float64: that is arithmetic, not a broken invariance.
+        # A feature that genuinely is not invariant moves by tens of percent, and
+        # test_invariance_check_catches_a_mislabelled_feature holds that line.
+        same = np.allclose(x[ok], y[ok], rtol=1e-9, atol=1e-10)
         if f.adjustment_invariant:
             assert same, f"{f.name} is declared adjustment-invariant but changed"
         else:
@@ -195,3 +204,29 @@ def test_binary_features_are_binary(built):
     for f in registry:
         if f.group in ("calendar", "regime"):
             assert set(features[f.name].dropna().unique()) <= {0, 1}, f"{f.name} is not binary"
+
+
+def test_invariance_check_catches_a_mislabelled_feature(snapshot):
+    """The counter-example for the loosened tolerance.
+
+    Raising atol from 1e-12 to 1e-10 is only defensible if the check still fails on
+    a feature that is genuinely not adjustment-invariant. A raw price level is the
+    clearest such case: rescaling the history moves it by the scale factor, which is
+    thirty-seven percent here and eight orders of magnitude above the tolerance.
+
+    This test exists because loosening a tolerance to make a suite pass is a way of
+    deleting a check while appearing to keep it.
+    """
+    scaled = snapshot.copy()
+    for col in ["Open", "High", "Low", "Close"]:
+        scaled[col] = scaled[col] * 1.37
+
+    level = snapshot["Close"].to_numpy(dtype=float)
+    level_scaled = scaled["Close"].to_numpy(dtype=float)
+    ok = np.isfinite(level) & np.isfinite(level_scaled)
+
+    assert not np.allclose(level[ok], level_scaled[ok], rtol=1e-9, atol=1e-10), (
+        "a raw price level survived the invariance check; the tolerance is too loose"
+    )
+    ratio = np.abs(level_scaled[ok] / level[ok] - 1.0).mean()
+    assert ratio > 0.3, f"the counter-example should move by ~37%, moved by {ratio:.1%}"

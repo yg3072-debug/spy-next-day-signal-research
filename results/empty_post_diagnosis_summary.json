@@ -1,0 +1,23 @@
+{
+  "purpose": "Whether rows with an empty text field in the archive are text-free posts or extraction misses.",
+  "diagnostic_date": "2026-08-24",
+  "seed": 20260824,
+  "sample_size_requested": 200,
+  "successful_requests": 197,
+  "error_count": 3,
+  "control_group_size": 49,
+  "control_body_found_share": 1.0,
+  "sample_group_size": 148,
+  "sample_with_body_text_count": 0,
+  "sample_without_body_text_count": 148,
+  "extraction_miss_share": 0.0,
+  "attachment_counts": {
+    "image": 96,
+    "video": 50,
+    "none": 2
+  },
+  "transcript_present_count": 137,
+  "transcript_present_share": 0.9257,
+  "link_card_present_share": 0.0135,
+  "note": "Aggregate only. No post identifiers, URLs, body text, transcripts or media are retained. The per-record file this replaces is not distributed and is excluded from the repository history."
+}

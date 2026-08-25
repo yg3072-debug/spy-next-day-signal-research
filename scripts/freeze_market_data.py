@@ -38,7 +38,8 @@ import numpy as np
 import pandas as pd
 import pandas_market_calendars as mcal
 import yfinance as yf
-from pandas_datareader import data as pdr
+# pandas_datareader is no longer used: the default rate path is the Board's H.15
+# endpoint. The import is gone so no research run can reach FRED by accident.
 
 START_DATE = "2015-01-01"
 
@@ -62,7 +63,20 @@ YAHOO_SINGLE = {
 # yield (investment basis, actual/365), so it can be compounded directly. DTB3 is
 # the secondary-market bill rate on a 360-day DISCOUNT basis and needs converting
 # before use; it is carried only as a sensitivity check on the cash series.
-FRED_SERIES = ["DGS3MO", "DTB3", "DGS2", "DGS10"]
+# Legacy column names, kept so the snapshot schema does not change. The values now
+# come from the Board series on the right. DTB3 has no constant-maturity equivalent
+# and is not referenced anywhere in the pipeline, so it is no longer collected.
+FRED_SERIES = ["DGS3MO", "DGS2", "DGS10"]
+H15_TO_LEGACY = {"TCM3M": "DGS3MO", "TCM2Y": "DGS2", "TCM10Y": "DGS10"}
+
+
+def board_h15_rates(start, end):
+    """Treasury constant-maturity rates, straight from the Board's H.15 release."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from fetch_treasury_rates import download, parse
+    frame = parse(download())
+    return frame.loc[(frame.index >= pd.Timestamp(start))
+                     & (frame.index <= pd.Timestamp(end))]
 
 # Series that genuinely trade on a different calendar from NYSE equities and may
 # therefore need carrying forward. SPY itself must be complete on every session.
@@ -151,9 +165,16 @@ def build_snapshot(start: str, end: str) -> tuple[pd.DataFrame, dict]:
             "unresolved": still_missing,
         }
 
-    yields = pdr.DataReader(FRED_SERIES, "fred", start, end)
-    yields.index = pd.DatetimeIndex(yields.index).tz_localize(None).normalize()
+    # Rates come from the Federal Reserve Board's own H.15 release, not from FRED.
+    # The Board's publication is a US federal government work in the public domain,
+    # so the series may be redistributed with attribution -- which is what allows a
+    # rate file to be committed here when the equity series cannot be. The study's
+    # original run obtained equivalent series through FRED; that is a historical
+    # fact, recorded in docs/data_availability.md, and is not rewritten.
+    yields = board_h15_rates(start, end).rename(columns=H15_TO_LEGACY)
     for col in FRED_SERIES:
+        if col not in yields.columns:
+            continue
         aligned = yields[col].reindex(out.index)
         n_missing = int(aligned.isna().sum())
         filled = aligned.ffill(limit=FILL_LIMIT)

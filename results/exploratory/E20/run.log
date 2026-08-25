@@ -28,17 +28,17 @@ run complete in 1317.7s
   run_manifest.json     written
 
 --- stderr ---
-<environment>\lib\site-packages\pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
+<site-packages>/pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
   result = getattr(ufunc, method)(*inputs, **kwargs)
-<environment>\lib\site-packages\pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
+<site-packages>/pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
   result = getattr(ufunc, method)(*inputs, **kwargs)
-<environment>\lib\site-packages\pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
+<site-packages>/pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
   result = getattr(ufunc, method)(*inputs, **kwargs)
-<environment>\lib\site-packages\pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
+<site-packages>/pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
   result = getattr(ufunc, method)(*inputs, **kwargs)
-<environment>\lib\site-packages\pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
+<site-packages>/pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
   result = getattr(ufunc, method)(*inputs, **kwargs)
-<environment>\lib\site-packages\pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
+<site-packages>/pandas\core\arraylike.py:399: RuntimeWarning: invalid value encountered in log
   result = getattr(ufunc, method)(*inputs, **kwargs)
 D:\SPY Prediction\repo\scripts\run_p1.py:482: RuntimeWarning: Mean of empty slice
   train_scores = {k: float(np.nanmean(v)) for k, v in fold_train.items()}

@@ -25,6 +25,7 @@ the citable part separable from the bespoke part.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,7 +34,11 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-LEXICON = Path(r"D:\SPY Prediction\_vendor\LM_MasterDictionary.csv")
+
+# The dictionary is not committed (see the module docstring), so its location is a
+# local matter. It defaults to `vendor/` inside the repository, which .gitignore
+# excludes, and `LM_DICTIONARY` overrides that for anyone who keeps it elsewhere.
+LEXICON = Path(os.environ.get("LM_DICTIONARY", ROOT / "vendor" / "LM_MasterDictionary.csv"))
 LEXICON_SHA256 = "e2d1328682bab7d2187684fb9f5420bb730401c9eefc00daf835edd203f4859d"
 
 LM_CATEGORIES = ["Negative", "Positive", "Uncertainty", "Litigious",
