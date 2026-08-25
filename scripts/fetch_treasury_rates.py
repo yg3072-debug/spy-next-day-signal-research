@@ -143,9 +143,11 @@ def write(rates: pd.DataFrame, raw: bytes) -> Path:
         "calendar_columns": {
             "session_minutes": "NYSE close minus open, in minutes",
             "is_half_day": "session_minutes < 390",
-            "source": "pandas_market_calendars, NYSE calendar",
+            "source": "generated from the NYSE session rules published by "
+                      "pandas_market_calendars",
             "package_version": getattr(mcal, "__version__", "unknown"),
-            "rights": "Exchange session times; derived here, no vendor data",
+            "rights": "Derived here from MIT-licensed calendar rules; no vendor data",
+            "package_licence": "MIT",
         },
         "relationship_to_the_frozen_p1_input": (
             "The study originally obtained equivalent series through FRED. This file "

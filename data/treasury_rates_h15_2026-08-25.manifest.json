@@ -1,7 +1,7 @@
 {
   "file": "treasury_rates_h15_2026-08-25.csv",
   "sha256": "7672fe1dd6c04252369a63287c4ebe2674fdcddda123493a40dea3977980a3e9",
-  "retrieved_utc": "2026-08-25T05:43:05+00:00",
+  "retrieved_utc": "2026-08-25T06:03:49+00:00",
   "publisher": "Board of Governors of the Federal Reserve System (US)",
   "release": "Statistical Release H.15, Selected Interest Rates (Daily)",
   "landing_page": "https://www.federalreserve.gov/releases/h15/",
@@ -30,9 +30,10 @@
   "calendar_columns": {
     "session_minutes": "NYSE close minus open, in minutes",
     "is_half_day": "session_minutes < 390",
-    "source": "pandas_market_calendars, NYSE calendar",
+    "source": "generated from the NYSE session rules published by pandas_market_calendars",
     "package_version": "5.4.0",
-    "rights": "Exchange session times; derived here, no vendor data"
+    "rights": "Derived here from MIT-licensed calendar rules; no vendor data",
+    "package_licence": "MIT"
   },
   "relationship_to_the_frozen_p1_input": "The study originally obtained equivalent series through FRED. This file is served by the Board directly. It is NOT the frozen P1 input and must not be represented as such; see --compare and docs/data_availability.md.",
   "sessions": 2926,

@@ -41,6 +41,12 @@ python scripts/freeze_alt_data.py --verify  # confirms they match the committed 
 `docs/scraping_notes.md` records each source's identity, row count and SHA-256, so a
 reader who obtains the same files can confirm they have the same bytes.
 
+## Calendar columns
+
+`session_minutes` and `is_half_day` are generated from the NYSE trading-session
+rules published by `pandas_market_calendars` (5.4.0, MIT licence), as
+`market_close - market_open` in minutes. They are not vendor data.
+
 ## The market snapshot
 
 Committed, because the confirmatory result is not reproducible without it. Its
