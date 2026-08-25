@@ -1,6 +1,13 @@
 # Confirmatory Result
 
-**Protocol v6, configuration `03b76826…`, snapshot `9b337ca7…`. One run, 2026-08-24.**
+**Protocol v6, configuration `03b76826…`, snapshot `9b337ca7…`. 2026-08-24.**
+
+Only one confirmatory decision path was evaluated. The deterministic procedure was later
+re-executed solely to persist diagnostics that the configuration had promised but the first
+execution omitted. Model choices, predictions, positions and reported returns were
+bit-identical, and no result was used to select a replacement procedure. See
+`results/p1_original/` for the primary artefacts and `results/reproduction_equivalence.json`
+for the field-by-field comparison.
 
 Out-of-sample: 1,865 NYSE sessions, 2019-03-21 to 2026-08-20 (7.4 years). Costs are 2 bp per
 side, 4 bp round trip, plus intraday financing.

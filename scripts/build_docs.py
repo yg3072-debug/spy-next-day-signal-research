@@ -7,6 +7,7 @@ manifest. Anything hand-maintained in two places eventually disagrees in two pla
 
 from __future__ import annotations
 
+import argparse
 import glob
 import json
 import re
@@ -280,7 +281,72 @@ def write_alt_feature_dictionary() -> Path:
     return out
 
 
+SYNTHETIC = ROOT / "tests" / "fixtures" / "market_inputs_synthetic.csv"
+
+
+def metadata_only() -> int:
+    """Check the committed dictionaries against the registry, without vendor data.
+
+    Feature *definitions* -- name, group, formula, adjustment invariance,
+    publication lag, rationale -- are static metadata. They are registered as the
+    builders run, and running them needs a frame with the right schema, not the real
+    prices. The synthetic fixture supplies that, so this mode works on a public
+    clone.
+
+    What it cannot check is anything measured *from* the data: coverage, session
+    counts, warm-up boundaries. Those are recorded from the frozen run and are
+    marked as such in the documents. Computing them from the fixture and printing
+    them would be inventing numbers, so this mode does not.
+
+    Nothing here reads the market snapshot, the raw corpora, or the dictionary.
+    """
+    if not SYNTHETIC.exists():
+        print("synthetic fixture missing; run scripts/make_synthetic_snapshot.py",
+              file=sys.stderr)
+        return 1
+    frame = pd.read_csv(SYNTHETIC, index_col="Date", parse_dates=True)
+    _, registry = build_features(frame)
+
+    document = (ROOT / "docs" / "feature_dictionary.md").read_text(encoding="utf-8")
+    failures = []
+    for f in registry:
+        if f"`{f.name}`" not in document:
+            failures.append(f"{f.name}: absent from docs/feature_dictionary.md")
+            continue
+        if f"`{f.formula}`" not in document:
+            failures.append(f"{f.name}: formula in the registry is not the one "
+                            "documented")
+    for group, title in GROUP_TITLES.items():
+        if any(f.group == group for f in registry) and f"## {title}" not in document:
+            failures.append(f"group heading missing: {title}")
+
+    print(f"registry            {len(registry)} features over "
+          f"{len({f.group for f in registry})} groups")
+    print(f"structural fields   name, group, formula, adjustment invariance, "
+          f"publication lag, rationale")
+    print(f"checked against     docs/feature_dictionary.md")
+    print()
+    print("NOT CHECKED: coverage, session counts and warm-up boundaries are")
+    print("measured from the frozen run and need the licensed snapshot. They")
+    print("are recorded from the frozen run, not recomputed here.")
+    if failures:
+        print()
+        print(chr(10).join(failures), file=sys.stderr)
+        return 1
+    print()
+    print(f"every registered feature is documented with the formula the code "
+          f"registers ({len(registry)} checked)")
+    return 0
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--metadata-only", action="store_true",
+                        help="verify feature definitions without any vendor data")
+    args = parser.parse_args()
+    if args.metadata_only:
+        return metadata_only()
+
     snapshot, manifest = load_snapshot()
     features, registry = build_features(snapshot)
     target = build_target(snapshot)

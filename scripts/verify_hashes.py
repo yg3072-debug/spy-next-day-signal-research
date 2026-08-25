@@ -38,6 +38,12 @@ NOT_VERIFIED = (
     "repository.\nRecorded snapshot identifiers are checked for consistency only."
 )
 
+# The frozen pre-registration. Its expected digest is read from docs/freeze_record.md
+# rather than recomputed from the document, so the comparison is between the file's
+# bytes and an independently written constant. Regenerating the expectation from the
+# file it is meant to check would make the check pass by construction.
+FROZEN_PROTOCOL = "docs/research_protocol.md"
+
 # Every file that writes the snapshot's identifier down. config/p1.yaml is the
 # authoritative one: it is the frozen procedure, and the others describe it.
 RECORD_FILES = (
@@ -139,6 +145,56 @@ def _check_record_consistency(root: Path, recorded: str | None,
                 "that config/p1.yaml states")
 
 
+def _recorded_protocol_digest(root: Path) -> str | None:
+    """The frozen protocol's digest, as docs/freeze_record.md states it."""
+    record = root / "docs" / "freeze_record.md"
+    if not record.exists():
+        return None
+    text = record.read_text(encoding="utf-8")
+    match = re.search(r"docs/research_protocol\.md\s+([0-9a-f]{64})", text)
+    return match.group(1) if match else None
+
+
+def _check_frozen_protocol(root: Path, failures: list[str]) -> None:
+    """Real verification: the pre-registration must not have moved.
+
+    A pre-registration revised after seeing results is not evidence of anything, so
+    this is the check that the document is the one that was frozen. It is compared
+    against the digest written in docs/freeze_record.md, not against itself.
+    """
+    path = root / FROZEN_PROTOCOL
+    recorded = _recorded_protocol_digest(root)
+    if recorded is None:
+        failures.append("docs/freeze_record.md records no digest for "
+                        f"{FROZEN_PROTOCOL}")
+        return
+    actual = sha256_of(path)
+    ok = actual == recorded
+    print(f"{'ok  ' if ok else 'FAIL'} {FROZEN_PROTOCOL}  {actual}  "
+          "(recomputed and compared against the freeze record)")
+    if not ok:
+        failures.append(f"{FROZEN_PROTOCOL}: freeze record states {recorded}, "
+                        f"actual {actual}")
+
+
+def _historical_identifiers(root: Path) -> set[str]:
+    """Digests the freeze record documents as superseded.
+
+    Read from docs/freeze_record.md rather than hard-coded, so admitting one is a
+    documented act rather than a quiet exception in a script. A stale hash that
+    nobody wrote down is still rejected.
+    """
+    record = root / "docs" / "freeze_record.md"
+    if not record.exists():
+        return set()
+    text = record.read_text(encoding="utf-8")
+    section = text.split("## Historical identifiers", 1)
+    if len(section) < 2:
+        return set()
+    body = section[1].split("## ", 1)[0]
+    return set(re.findall("[0-9a-f]{64}", body))
+
+
 def _check_quoted_hashes(root: Path, config_digest: str, recorded: str | None,
                          artefacts: list[Path], failures: list[str]) -> None:
     """Every hash-like token in the protocol must resolve to something real.
@@ -149,19 +205,31 @@ def _check_quoted_hashes(root: Path, config_digest: str, recorded: str | None,
     """
     protocol = (root / "docs" / "research_protocol.md").read_text(encoding="utf-8")
 
-    for label, digest in (("configuration", config_digest),
-                          ("snapshot", recorded)):
-        if digest is None:
-            continue
-        if digest in protocol:
-            print(f"ok   protocol quotes the {label} hash")
+    # The configuration digest is accepted under either convention. The protocol is
+    # frozen and quotes the CRLF-era value that was current when it was written;
+    # editing a pre-registration so a later checker is happy would defeat the point
+    # of freezing it. Both forms are derived from the committed bytes below, so an
+    # arbitrary stale hash is still rejected.
+    cr, lf = bytes([13]), bytes([10])
+    canonical = (root / "config" / "p1.yaml").read_bytes().replace(cr + lf, lf)
+    config_forms = {config_digest,
+                    sha256_bytes(canonical.replace(lf, cr + lf), normalise=False)}
+    if any(d in protocol for d in config_forms):
+        print("ok   protocol quotes the configuration hash")
+    else:
+        failures.append("docs/research_protocol.md quotes no digest that resolves "
+                        "to config/p1.yaml")
+    if recorded is not None:
+        if recorded in protocol:
+            print("ok   protocol quotes the snapshot hash")
         else:
             failures.append(
-                f"docs/research_protocol.md does not quote the {label} hash {digest}")
+                f"docs/research_protocol.md does not quote the snapshot hash {recorded}")
 
     known = {sha256_of(a) for a in artefacts}
     if recorded:
         known.add(recorded)
+    known |= _historical_identifiers(root)
 
     # A superseded digest is a committed artefact under the older convention: the
     # same content with CRLF terminators. It is CONSTRUCTED from the canonical
@@ -212,6 +280,7 @@ def main(root: Path = ROOT) -> int:
 
     distributed = bool(csvs) and bool(manifests)
     config_digest = _check_configuration(root, failures)
+    _check_frozen_protocol(root, failures)
 
     if distributed:
         _verify_snapshot_bytes(csvs, manifests, recorded, failures)

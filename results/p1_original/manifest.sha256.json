@@ -1,0 +1,12 @@
+{
+  "directory": "results/p1_original/",
+  "description": "SHA-256 of each artefact of the primary P1 execution, LF-normalised for text.",
+  "files": {
+    "candidate_diagnostics.csv": "d033691e5a38aa89a9f30175954f1810fceecf47222ac0f5c1820cf117f740f2",
+    "feature_stability.csv": "aefecda9789f55cb27fa3223dd60a7bfae44e54061a23a1a6a1a2b3fe96377b7",
+    "oos_predictions.csv": "9f0e8a3268df483e415841cca814854103d368aadccd982c72a6a1060733cb29",
+    "README.md": "aeafe4b1e9e674c140bc0dac15c232465941b073e124835914bc64b187605cad",
+    "run_manifest.json": "29e5dd079956bb8196776f26b6d486c29f1bba1bbb07451d8ec26a2396c29fa6",
+    "selection_log.csv": "4f5532ebb412556ca77918b603a3991ae2353b9f1db96eadd70347a55ae1a314"
+  }
+}

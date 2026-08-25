@@ -1,13 +1,24 @@
-"""No tracked file may carry a machine identifier or a personal address.
+"""Repository hygiene: no tracked file may carry environment-specific or personal data.
 
-This is a public repository. Two things leaked into it before this test existed: a
-Windows user directory, captured in a run log from a library warning, and a
-personal email address that a script had been putting into a scraper's User-Agent.
-Neither failed anything. Both were found by reading, which is not a method.
+A research repository is read and re-run by people on other machines. Anything that
+only makes sense on the machine that produced it -- an absolute user directory, a
+contact address baked into a script -- is noise at best and a disclosure at worst, and
+neither kind fails loudly on its own. These checks make them fail.
 
-Identifying a crawler to the site it visits is good practice, so the mechanism
-stays and the value comes from `SCRAPER_CONTACT` at run time instead of sitting in
-the repository.
+The rules enforced here:
+
+* no absolute user directory from any platform, in any tracked file
+* no email address beyond those a cited third party publishes for itself
+* no credentials, private keys or `.env` files
+* a crawler identifies itself from the environment at run time, not from a value
+  committed to the repository
+
+Identifying a crawler to the site it visits is good practice, so the mechanism stays;
+what does not stay is the value. `scripts/collect_truth_social.py` and
+`scripts/diagnose_empty_posts.py` read `SCRAPER_CONTACT` when they run.
+
+Third-party document text and vendor market data are governed separately, in
+`tests/test_no_raw_corpus.py`.
 """
 
 from __future__ import annotations
@@ -42,29 +53,16 @@ ALLOWED_EMAILS = {
 # is narrower and more durable than exempting whichever file happens to contain it.
 RESERVED_DOMAINS = ("example.com", "example.org", "example.net", "invalid", "test")
 
-# One address, in one file, for one reason. docs/freeze_record.md reproduces the
-# deleted tag objects verbatim, and a tag object carries its tagger line; tag and
-# commit authorship is retained metadata by policy, and a record of what a tag said
-# is only evidence if it matches what the tag said.
-#
-# This is a pair, not a file exemption. Any other address in that file still fails,
-# and this address anywhere else still fails.
-APPROVED_ADDRESS_IN_FILE = {
-    ("docs/freeze_record.md", "yg3072@columbia.edu"),
-}
-
 SKIP_SUFFIXES = {".png", ".pdf", ".jpg", ".jpeg", ".gz", ".zip", ".parquet"}
 
 # Documents that state these rules have to be able to name what they forbid. An
 # explicit, reasoned allowlist -- not a relaxed pattern, which would stop the check
 # working everywhere it matters.
 POLICY_DOCUMENTS = {
-    "PRIVACY.md": "states the personal-information rules and must name the shapes "
-                  "they exclude",
     "DATA_POLICY.md": "states the redistribution rules and cites the dictionary "
                       "licence's own contact address",
-    "docs/errata.md": "records what was removed, which requires describing it",
-    "tests/test_no_private_data.py": "the rules themselves",
+    "docs/errata.md": "records what was corrected, which requires describing it",
+    "tests/test_repository_hygiene.py": "the rules themselves",
     "tests/test_no_raw_corpus.py": "the rules themselves",
 }
 
@@ -115,7 +113,6 @@ def test_no_tracked_file_contains_an_unexpected_email_address(corpus):
             a for a in EMAIL.findall(text)
             if a.lower() not in ALLOWED_EMAILS
             and not a.lower().endswith(RESERVED_DOMAINS)
-            and (rel, a.lower()) not in APPROVED_ADDRESS_IN_FILE
         }
         if addresses:
             found[rel] = addresses

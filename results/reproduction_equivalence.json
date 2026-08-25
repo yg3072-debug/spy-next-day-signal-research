@@ -1,5 +1,8 @@
 {
-  "original_commit": "120f3e9",
+  "primary": "results/p1_original/",
+  "comparison": "results/",
+  "historical_commit_label": "120f3e9",
+  "verification_requires_git_history": false,
   "fields": {
     "model": {
       "identical": true
@@ -37,14 +40,6 @@
       "identical": true,
       "max_abs_difference": 0.0
     },
-    "realised_o2c": {
-      "identical": true,
-      "max_abs_difference": 0.0
-    },
-    "gross": {
-      "identical": true,
-      "max_abs_difference": 0.0
-    },
     "execution_cost": {
       "identical": true,
       "max_abs_difference": 0.0
@@ -53,38 +48,37 @@
       "identical": true,
       "max_abs_difference": 0.0
     },
-    "net": {
-      "identical": true,
-      "max_abs_difference": 0.0
-    },
     "selection_log.csv": {
       "identical": true
     },
     "feature_stability.csv": {
       "identical": true
+    },
+    "candidate_diagnostics.csv": {
+      "identical": true
     }
   },
   "sessions": 1865,
-  "metrics": {
-    "original": {
-      "sharpe": -0.1443541670734307,
-      "ann_mean_excess": -0.013206419495668541,
+  "position_and_cost_totals": {
+    "primary": {
       "active_sessions": 620,
       "long": 516,
       "flat": 1245,
-      "short": 104
+      "short": 104,
+      "total_execution_cost": 0.24800000000000003,
+      "total_financing_cost": 0.01385212899552124
     },
-    "reproduction": {
-      "sharpe": -0.1443541670734307,
-      "ann_mean_excess": -0.013206419495668541,
+    "comparison": {
       "active_sessions": 620,
       "long": 516,
       "flat": 1245,
-      "short": 104
+      "short": 104,
+      "total_execution_cost": 0.24800000000000003,
+      "total_financing_cost": 0.01385212899552124
     }
   },
-  "metrics_identical": true,
-  "manifest_original": {
+  "position_and_cost_totals_identical": true,
+  "manifest_primary": {
     "config_sha256": "c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7",
     "snapshot_sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
     "code_commit": "0adfc1db96d9a7c74694ad2d1411b02f0d8b61d9",
@@ -94,7 +88,7 @@
       "pandas": "2.3.3"
     }
   },
-  "manifest_reproduction": {
+  "manifest_comparison": {
     "config_sha256": "c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7",
     "snapshot_sha256": "9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a",
     "code_commit": "48a6c85f2490b45524319ed22e7295cda83f4232",
@@ -105,6 +99,22 @@
     }
   },
   "same_config_snapshot_and_packages": true,
+  "primary_file_digests": {
+    "candidate_diagnostics.csv": "d033691e5a38aa89a9f30175954f1810fceecf47222ac0f5c1820cf117f740f2",
+    "feature_stability.csv": "aefecda9789f55cb27fa3223dd60a7bfae44e54061a23a1a6a1a2b3fe96377b7",
+    "oos_predictions.csv": "9f0e8a3268df483e415841cca814854103d368aadccd982c72a6a1060733cb29",
+    "README.md": "aeafe4b1e9e674c140bc0dac15c232465941b073e124835914bc64b187605cad",
+    "run_manifest.json": "29e5dd079956bb8196776f26b6d486c29f1bba1bbb07451d8ec26a2396c29fa6",
+    "selection_log.csv": "4f5532ebb412556ca77918b603a3991ae2353b9f1db96eadd70347a55ae1a314"
+  },
+  "not_compared": {
+    "fields": [
+      "gross",
+      "net",
+      "realised_o2c"
+    ],
+    "reason": "reconstructing the realised session return requires the licensed market snapshot, which this repository does not distribute. Every field either execution actually publishes is compared above."
+  },
   "verdict": "bit_identical",
-  "disposition": "The reproduction is a supplementary artefact. The first execution stands as the primary result, is preserved under results/p1_original/, and neither run was chosen over the other on the basis of what it produced."
+  "disposition": "Only one confirmatory decision path was evaluated. The deterministic procedure was later re-executed solely to persist diagnostics the configuration had promised but the first execution omitted. Every shared field is bit-identical, and no result was used to select a replacement procedure. The first execution stands as the primary result and is preserved under results/p1_original/."
 }

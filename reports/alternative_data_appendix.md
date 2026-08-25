@@ -108,12 +108,21 @@ and counted separately.
 |---|---:|
 | Posts | 14,145, no duplicate status ids |
 | Overlap with the modelling set | **446 sessions**, 3 with no post |
+| Sessions carrying at least one post | **443** |
 | Posts with no text | **3,749 (26.5%)** |
 | Scored posts per session, mean / median / max | 23.5 / 16 / 142 |
 | Empty posts per session, mean / max | 8.5 / 159 |
 | Median tokens per non-empty post | **45** |
 | Mean LM tone | −0.066 |
 | Sessions where tone is exactly zero | 4.3% |
+
+**On 446 against 443.** `freeze_alt_data.py` reports 443 sessions; the table above and
+§9 of the protocol say 446. Both are right and they count different things. 446
+modelling sessions fall inside the archive's span of 2024-07-15 to 2026-04-23, and three
+of them received no post at all. 446 is the correct figure for sizing the sample, because
+a session with no posts still carries a zero-count feature row and is still evaluated;
+443 is the number of sessions with content. Both are emitted into the data manifest, so
+the difference is traceable rather than mysterious.
 
 **A ten-token headline is a coarse instrument for a sentiment dictionary.** On more
 than a third of sessions no Loughran–McDonald word appears in any headline at all,

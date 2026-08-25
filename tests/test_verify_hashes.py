@@ -16,6 +16,7 @@ at all if a reader takes it for "the data is what it says".
 from __future__ import annotations
 
 import importlib.util
+import re
 import json
 import shutil
 from pathlib import Path
@@ -33,6 +34,10 @@ from src.digest import sha256_bytes, sha256_of  # noqa: E402
 
 SNAPSHOT_NAME = "market_inputs_2026-08-21.csv"
 CSV_BODY = b"Date,Open,High,Low,Close\n2020-01-02,100,101,99,100.5\n"
+
+# A digest the freeze record documents as superseded. Frozen documents may quote one;
+# an undocumented hash is still rejected.
+HISTORICAL_DIGEST = "e" * 64
 
 
 def _write(path: Path, text: str) -> None:
@@ -64,10 +69,22 @@ def repo(tmp_path: Path) -> Path:
            "# Protocol\n\n"
            f"| Configuration SHA-256 | `{config_digest}` |\n"
            f"| Data snapshot SHA-256 | `{snapshot_digest}` |\n")
-    for name in ("data_availability.md", "feature_dictionary.md", "freeze_record.md"):
+    for name in ("data_availability.md", "feature_dictionary.md"):
         _write(tmp_path / "docs" / name, f"**SHA-256:** `{snapshot_digest}`\n")
     _write(tmp_path / "results" / "run_manifest.json",
            json.dumps({"snapshot_sha256": snapshot_digest}, indent=2) + "\n")
+
+    # The freeze record carries three different things: the snapshot identifier, the
+    # frozen protocol's own digest, and the historical digests the frozen documents
+    # are permitted to quote. Written last because it has to hash the protocol.
+    protocol_digest = sha256_of(tmp_path / "docs" / "research_protocol.md")
+    _write(tmp_path / "docs" / "freeze_record.md",
+           f"**SHA-256:** `{snapshot_digest}`\n\n"
+           "## The frozen protocol document\n\n"
+           f"```\ndocs/research_protocol.md\n{protocol_digest}\n```\n\n"
+           "## Historical identifiers\n\n"
+           f"```\n{HISTORICAL_DIGEST}\n    a superseded state\n```\n\n"
+           "## End\n")
     return tmp_path
 
 
@@ -227,3 +244,75 @@ def test_real_synthetic_fixture_is_outside_the_snapshot_glob():
         pytest.skip("synthetic fixture not present in this checkout")
     csvs, _ = verify_hashes._snapshot_files(ROOT)
     assert fixture not in csvs
+
+
+# --------------------------------------------------------------------------
+# The frozen pre-registration
+# --------------------------------------------------------------------------
+
+def test_frozen_protocol_is_verified_against_the_freeze_record(repo, capsys):
+    assert verify_hashes.main(repo) == 0
+    assert "compared against the freeze record" in capsys.readouterr().out
+
+
+def test_altered_frozen_protocol_fails(repo):
+    """The whole value of a pre-registration is that it did not move.
+
+    A document revised after the results are known is not evidence of anything, so
+    this must fail even though the edit is harmless-looking.
+    """
+    path = repo / "docs" / "research_protocol.md"
+    path.write_text(path.read_text(encoding="utf-8") + "\nAn afterthought.\n",
+                    encoding="utf-8", newline="\n")
+    assert verify_hashes.main(repo) == 1
+
+
+def test_freeze_record_without_a_protocol_digest_fails(repo):
+    """Silently skipping the check because nothing was recorded is not acceptable."""
+    path = repo / "docs" / "freeze_record.md"
+    path.write_text(path.read_text(encoding="utf-8").replace(
+        "docs/research_protocol.md\n", "docs/nothing.md\n"), encoding="utf-8",
+        newline="\n")
+    assert verify_hashes.main(repo) == 1
+
+
+# --------------------------------------------------------------------------
+# Historical digests are admitted only when documented
+# --------------------------------------------------------------------------
+
+def test_documented_historical_digest_is_admissible(repo, capsys):
+    """A frozen document may quote a superseded digest the freeze record lists."""
+    path = repo / "docs" / "research_protocol.md"
+    path.write_text(path.read_text(encoding="utf-8")
+                    + f"\nSuperseded: `{HISTORICAL_DIGEST}`\n",
+                    encoding="utf-8", newline="\n")
+    # the protocol changed, so its recorded digest has to move with it
+    record = repo / "docs" / "freeze_record.md"
+    record.write_text(record.read_text(encoding="utf-8").replace(
+        sha256_of(path.with_name("research_protocol.md")), sha256_of(path)),
+        encoding="utf-8", newline="\n")
+    _rerecord_protocol(repo)
+    assert verify_hashes.main(repo) == 0
+
+
+def test_undocumented_stale_digest_is_rejected(repo):
+    """An arbitrary hash nobody wrote down is still caught."""
+    path = repo / "docs" / "research_protocol.md"
+    path.write_text(path.read_text(encoding="utf-8") + f"\nStale: `{'d' * 64}`\n",
+                    encoding="utf-8", newline="\n")
+    _rerecord_protocol(repo)
+    assert verify_hashes.main(repo) == 1
+
+
+def _rerecord_protocol(repo: Path) -> None:
+    """Update the freeze record to the protocol's current digest.
+
+    Used only by tests that deliberately edit the protocol and want to isolate a
+    different check from the document-digest check.
+    """
+    record = repo / "docs" / "freeze_record.md"
+    text = record.read_text(encoding="utf-8")
+    new = sha256_of(repo / "docs" / "research_protocol.md")
+    text = re.sub(r"(docs/research_protocol\.md\s+)[0-9a-f]{64}",
+                  lambda m: m.group(1) + new, text)
+    record.write_text(text, encoding="utf-8", newline="\n")

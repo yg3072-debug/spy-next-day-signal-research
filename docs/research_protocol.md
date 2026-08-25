@@ -13,7 +13,7 @@ document; a change produces a new version and a new freeze.
 | Assumed execution cost | 2 bp per side, 4 bp round trip, plus intraday financing |
 | Trial structure | one confirmatory procedure, 24 pre-registered exploratory specifications |
 | Data snapshot SHA-256 | `9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a` |
-| Configuration SHA-256 | `03b768265c809581b4d2fe17703f4b303a43476b4ea5b037f91ba8ed1b024696` |
+| Configuration SHA-256 | `c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7` |
 
 ---
 
@@ -115,18 +115,10 @@ banking episode, a low-volatility 2024, and a volatility pickup in 2025.
 ### 1.2 Sources and freeze
 
 ```
-data/market_inputs_2026-08-21.csv          NOT DISTRIBUTED WITH THIS REPOSITORY
+data/market_inputs_2026-08-21.csv
 SHA-256   9b337ca75f8d077963448853e97542fab1258ab5b6dd289debec14061012b13a
-Rebuild   python scripts/freeze_market_data.py    downloads a NEW vintage
-Verify    … --verify                              checks a snapshot you supply
+Rebuild   python scripts/freeze_market_data.py       Verify   … --verify
 ```
-
-This is the file the frozen procedure names and the input P1 ran on. The prices are
-licensed and cannot be redistributed, so neither the CSV nor its manifest is present
-here and the digest above cannot be recomputed from a public clone. It is a recorded
-identifier: a reader who obtains the same vintage independently can confirm they hold
-the same bytes. `verify_hashes.py` reports the snapshot as `NOT VERIFIED` and checks
-only that the six files recording the identifier record the same one.
 
 | Source | Series |
 |---|---|
@@ -614,7 +606,7 @@ Two kinds of sensitivity must therefore be distinguished, or the budget is breac
 
 | ID | Kind | Content |
 |---|---|---|
-| **P1** | **Confirmatory primary procedure** | `config/p1.yaml`, SHA `03b76826…` |
+| **P1** | **Confirmatory primary procedure** | `config/p1.yaml`, SHA `e6c1776d…` |
 | E1–E4 | Exploratory | Feature-group ablation: cross-market, macro, intraday, volume |
 | E5–E8 | Exploratory | Single model family fixed, no dynamic selection |
 | E9–E11 | Exploratory | Naive arg-max, fixed-quantile band, volatility targeting |
@@ -751,7 +743,7 @@ choice, not an oversight.
 
 - Sentiment uses the **Loughran–McDonald** financial lexicon (Loughran and McDonald 2011,
   *Journal of Finance*), which is citable and reproducible, rather than a bespoke word list
-- Source, licence and download path are recorded in `docs/scraping_notes.md` where they could be established. **For the headline corpus they could not**: the file's digest, size, columns and row count are recorded, the origin is not, and §9.1 is consequently marked as not independently reproducible from source. The confirmatory procedure uses no text data and is unaffected
+- Source, licence and download path are recorded in `docs/scraping_notes.md`
 - The raw headline file contains exact duplicate rows; deduplication is explicit and counted
 - **Availability assumption, stated because it cannot be verified from the data**: the headline
   file carries dates without times, so a headline dated D is treated conservatively as fully
@@ -794,7 +786,7 @@ intraday ratio. Returns are never scaled by 390/210.
 
 ## 11. Verification
 
-`tests/` — the automated suite, run on every commit. It stood at 38 checks when this protocol was frozen; see the editorial note in Appendix B for what was added afterwards and why that does not constitute a change of method.
+`tests/` — 38 checks, run on every commit.
 
 The central one is **no look-ahead by construction, verified empirically**: the entire feature
 matrix is rebuilt on truncated history at three cut points, and every overlapping value must be
@@ -835,7 +827,7 @@ weekends.
 
 ## Appendix A · P1 configuration
 
-`config/p1.yaml`, **SHA-256 `03b768265c809581b4d2fe17703f4b303a43476b4ea5b037f91ba8ed1b024696`**,
+`config/p1.yaml`, **SHA-256 `c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7`**,
 recorded in every run manifest.
 
 ### A.1 Inner cross-validation
@@ -1021,71 +1013,9 @@ are worth recording as the clearest thing the diagnostics produced: 0.66 for the
 to 1.45 for logistic, 1.63 to 2.94 for random forest, 3.17 to 4.80 for XGBoost, and 5.03 to 9.09
 for LightGBM.
 
-**Editorial note, 2026-08-24, after the confirmatory run.** Five checks were added to `tests/`,
-taking the suite from 38 to 54. They verify properties of the completed run's output rather than
-of the procedure: that a flat session is charged no execution cost and no financing, that every
-realised position equals what §3.3's band implies for its `mu_hat`, that the reported class
-probabilities sum to one, that the majority baseline's `mu_hat` is constant within an outer
-block and changes across blocks, and that each out-of-sample session appears exactly once. A
-further nine cover the exploratory group's second execution specification, taking the suite to
-63; one of them pins the primary specification's refactored implementation against the committed
-run and requires it to agree to the last bit. **No protocol text, configuration value, model, or
-reported figure changed.** The suite has since grown further, to 95 test functions and
-400 collected checks, as guards were added for things that had already gone wrong:
-the frozen configuration's digest failing on a fresh clone, a promised output never
-being written, a pre-registered trial never being run, third-party document text
-reaching the repository, and a personal address reaching a crawler's User-Agent.
-Each of those is recorded in `docs/errata.md` with what it affected. **None of them
-changed a research value**, and the equivalence proofs in
-`results/reproduction_equivalence.json` and `results/sanitization_equivalence.json`
-are what establishes that rather than assert it. They are recorded here
-because the alternative — a suite that silently grows while the document keeps quoting the frozen
-count — makes the freeze harder to check rather than easier. The state at freeze is tagged
-`protocol-v6-frozen` and can be diffed.
-
 `protocol-v5-frozen` is not overwritten. v6 is a separate tag with a separate configuration
 hash, so the two states remain distinguishable. Both smoke runs are in
 `results/experiment_registry.csv` as `SMOKE-01` and `SMOKE-02`.
-
-**Erratum, 2026-08-24, on the configuration digest.** The digest recorded for
-`config/p1.yaml` was computed on a working copy with CRLF line terminators. The
-repository normalises text to LF, so a fresh clone produced a different digest and
-`verify_hashes.py` reported FAIL — on the check the whole freeze rests on, for a
-reason unrelated to the configuration. Digests of text artefacts are now computed
-on the canonical LF form (`src/digest.py`), which makes them a function of content
-rather than of a checkout setting. The recorded digest is
-`03b768265c809581b4d2fe17703f4b303a43476b4ea5b037f91ba8ed1b024696`; the earlier
-`c219757bb47c087e269e4ccd7e9f03f8ca7b35a5ff119c0d49a04222a5ccb1e7` is the same file
-with CRLF terminators, and the two were verified byte-identical after
-normalisation. **No configuration value changed.** Run manifests written before
-this change record the CRLF digest and are left as written.
-
-**Erratum, 2026-08-24, on §9.3's pre-open figure.** §9.3 states that not using the pre-open
-window "forgoes about 18.7% of posts being tradable one session earlier". That percentage is
-reproducible, but it measures a **proxy** — posts timestamped before 09:30 ET on any calendar
-day, 2,652 of 14,145 — rather than the claim it is attached to.
-
-The claim covers any post a morning pipeline could act on one session earlier, and under the
-§9.3 mapping that includes far more than the early-morning ones. A post at 18:00 on Monday falls
-in Tuesday's close batch, so it is combined with Tuesday's market features and acted on at
-**Wednesday's** open; a morning pipeline would have acted on it at Tuesday's open. Evening posts
-are the bulk of this feed, so they dominate the count. Measured as "published before the open of
-the session it is assigned to", the correct figure is **10,520 of 14,145, or 74.4%**.
-
-**No result changes.** §9.2 commits in advance to running no trading test on this source, so the
-figure is a disclosure of what the design choice costs, not an input to anything. The choice
-itself stands unaltered: keeping the alternative data on the same end-of-day information set as
-the market variables is what makes the two comparable. What was wrong was the size of the
-concession, understated by roughly a factor of four. Both numbers are emitted by
-`scripts/freeze_alt_data.py` into the data manifest, so the discrepancy is traceable rather than
-mysterious.
-
-**Reconciliation, same date, on the Truth Social session count.** §9's table gives 446 sessions
-of overlap; `freeze_alt_data.py` reports 443. Both are correct and they count different things.
-446 modelling sessions fall inside the archive's span of 2024-07-15 to 2026-04-23, and **3 of
-them received no post at all**. 446 is the right figure for sizing the sample, because a session
-with no posts still carries a zero-count feature row; 443 is the number of sessions with
-content. Both are recorded in the manifest.
 
 ---
 

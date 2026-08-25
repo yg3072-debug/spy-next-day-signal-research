@@ -43,15 +43,24 @@ jobs:
       - name: Verify published freeze records
         run: python scripts/verify_hashes.py
 
+      # Feature definitions are static metadata and are checkable without any vendor
+      # data: the builders run against the synthetic fixture purely to populate the
+      # registry. Coverage and session counts are measured from the frozen run and are
+      # not recomputed here.
+      - name: Verify feature definitions against the registry
+        run: python scripts/build_docs.py --metadata-only
+
       - name: Verify the alternative-data checksums
         run: python scripts/freeze_alt_data.py --verify
 
-      # The corpus, privacy and coverage contracts. Kept as a separate step from
-      # the rest of the suite so a failure here is unmistakable in the run summary:
-      # these are the rules that were broken silently before they existed.
-      - name: Data policy, privacy and coverage contracts
+      # Data governance and repository hygiene, kept as a separate step from the rest
+      # of the suite so a failure here is unmistakable in the run summary. These are
+      # the rules about what may enter a public research repository at all: no vendor
+      # market data, no third-party document text or record identifiers, no
+      # environment-specific paths, no credentials.
+      - name: Repository data governance and coverage contracts
         run: |
-          pytest tests/test_no_raw_corpus.py tests/test_no_private_data.py \
+          pytest tests/test_no_raw_corpus.py tests/test_repository_hygiene.py \
                  tests/test_coverage_contracts.py -q
 
       # Blocks a *new* commit from reintroducing a raw corpus path. It inspects only

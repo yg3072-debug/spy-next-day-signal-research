@@ -1,0 +1,37 @@
+{
+  "rate_file": "treasury_rates_h15_2026-08-25.csv",
+  "fields": {
+    "oos financing": {
+      "sessions": 1865,
+      "identical": 1865,
+      "max_abs_difference": 4.977165598066269e-15,
+      "mismatched_dates": []
+    },
+    "ledger financing_cost": {
+      "sessions": 620,
+      "identical": 620,
+      "max_abs_difference": 4.977165598066269e-15,
+      "mismatched_dates": []
+    },
+    "E22 carry_rf": {
+      "sessions": 1864,
+      "identical": 1864,
+      "max_abs_difference": 4.931509844582904e-14,
+      "mismatched_dates": []
+    },
+    "E23 carry_rf": {
+      "sessions": 1864,
+      "identical": 1864,
+      "max_abs_difference": 4.931509844582904e-14,
+      "mismatched_dates": []
+    },
+    "E24 carry_rf": {
+      "sessions": 1864,
+      "identical": 1864,
+      "max_abs_difference": 4.931509844582904e-14,
+      "mismatched_dates": []
+    }
+  },
+  "verdict": "every financing field is reconstructible from Board H.15 data",
+  "note": "Any mismatch confined to 2026-08-21 reflects a provisional rate in the frozen snapshot that the Board has since revised. That date lies outside the modelling window. A mismatch on any other date would falsify the claim that these fields are publishable on the strength of the Board's licence."
+}

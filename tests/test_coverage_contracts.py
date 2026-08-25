@@ -11,6 +11,7 @@ These two tests watch for it.
 from __future__ import annotations
 
 import json
+import subprocess
 import re
 import sys
 from pathlib import Path
@@ -138,8 +139,20 @@ def test_the_reproduction_run_is_recorded_as_equivalent():
                         .read_text(encoding="utf-8"))
     assert report["verdict"] == "bit_identical", report["disposition"]
     assert report["same_config_snapshot_and_packages"]
-    for field in ("position", "mu_hat", "net", "p_long"):
+    for field in ("position", "mu_hat", "p_long", "financing", "execution_cost",
+                  "financing_cost", "selection_log.csv"):
         assert report["fields"][field]["identical"], f"{field} differs between runs"
+
+    # The realised return is not reconstructible without the licensed snapshot, so
+    # gross and net cannot be compared. That has to be *stated* -- a comparison that
+    # quietly skips fields and still reports "bit_identical" overclaims.
+    assert "not_compared" in report, (
+        "the report must say which fields it could not compare")
+    assert set(report["not_compared"]["fields"]) >= {"gross", "net"}
+    assert report["not_compared"]["reason"]
+
+    # And it must not depend on a commit nobody can fetch.
+    assert report["verification_requires_git_history"] is False
 
 
 @pytest.mark.skipif(not REGISTRY.exists(), reason="no registry yet")
@@ -272,3 +285,31 @@ def test_historical_snapshot_references_say_it_is_not_distributed():
     assert not offenders, (
         "these refer to the frozen snapshot without stating anywhere that it is "
         "not distributed:\n  " + "\n  ".join(offenders))
+
+
+# ---------------------------------------------------------------------------
+# Feature definitions are checkable without vendor data
+# ---------------------------------------------------------------------------
+
+def test_feature_definitions_verify_without_the_snapshot():
+    """`build_docs.py --metadata-only` must run on a public clone.
+
+    The dictionaries are generated documents, and the generator needs the licensed
+    snapshot. That would leave a public clone unable to check any of it, so the
+    structural half -- names, groups, formulas, invariance flags, lags -- is
+    verifiable on its own against the synthetic fixture.
+    """
+    result = subprocess.run(
+        [sys.executable, "scripts/build_docs.py", "--metadata-only"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "NOT CHECKED" in result.stdout, (
+        "the mode must say which fields it cannot verify")
+
+
+def test_metadata_only_mode_reads_no_vendor_data():
+    """It must not fall back to the real snapshot if one happens to be present."""
+    source = (ROOT / "scripts" / "build_docs.py").read_text(encoding="utf-8")
+    body = source[source.index("def metadata_only("):source.index("def main()")]
+    assert "load_snapshot" not in body
+    assert "market_inputs_synthetic.csv" in source
