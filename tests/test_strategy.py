@@ -25,8 +25,10 @@ C = COST / 1e4
 
 
 @pytest.fixture(scope="module")
-def financing():
-    frame, _ = load_snapshot()
+def financing(market_frame):
+    # Session length and the short rate; the band's behaviour is what is under
+    # test, and it holds on synthetic input as well as real.
+    frame = market_frame
     return frame, intraday_financing(frame, frame.index)
 
 

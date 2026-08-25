@@ -32,8 +32,11 @@ from src.pipeline import (  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def data():
-    snapshot, _ = load_snapshot()
+def data(market_frame):
+    # The snapshot is not distributed; `market_frame` supplies a real one when the
+    # user has obtained it and the synthetic fixture otherwise. What this file
+    # asserts holds on either, because it is about the code.
+    snapshot = market_frame
     features, registry = build_features(snapshot)
     target = build_target(snapshot)
     idx = features.dropna().index.intersection(target.dropna().index)

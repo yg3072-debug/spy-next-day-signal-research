@@ -1,0 +1,696 @@
+{
+  "files": {
+    "results/altdata/N0/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1m10/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1m20/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1m5/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1m60/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1p10/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1p20/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1p5/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/altdata/N1p60/oos_predictions.csv": {
+      "rows_before": 1247,
+      "rows_after": 1247,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E1/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E13/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E14/oos_predictions.csv": {
+      "rows_before": 1365,
+      "rows_after": 1365,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E15/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E16/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E17/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E18/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E19/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E2/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E20/oos_predictions.csv": {
+      "rows_before": 1858,
+      "rows_after": 1858,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E21/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E22/oos_predictions.csv": {
+      "rows_before": 1864,
+      "rows_after": 1864,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_c2c"
+      ]
+    },
+    "results/exploratory/E23/oos_predictions.csv": {
+      "rows_before": 1864,
+      "rows_after": 1864,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_c2c"
+      ]
+    },
+    "results/exploratory/E24/oos_predictions.csv": {
+      "rows_before": 1864,
+      "rows_after": 1864,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_c2c"
+      ]
+    },
+    "results/exploratory/E3/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E4/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E5/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E6/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E7/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/exploratory/E8/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/p1_original/oos_predictions.csv": {
+      "rows_before": 1865,
+      "rows_after": 1865,
+      "compared": [
+        "step",
+        "model",
+        "params",
+        "delta",
+        "p_short",
+        "p_flat",
+        "p_long",
+        "mu_hat",
+        "position",
+        "calibration_skipped"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "realised_o2c"
+      ]
+    },
+    "results/trade_ledger.csv": {
+      "rows_before": 620,
+      "rows_after": 620,
+      "compared": [
+        "position",
+        "execution_cost",
+        "financing_cost",
+        "model"
+      ],
+      "max_abs_difference": 0.0,
+      "status": "identical",
+      "dropped_columns": [
+        "close",
+        "gross",
+        "net",
+        "open"
+      ]
+    }
+  },
+  "files_compared": 33,
+  "all_retained_fields_identical": true
+}

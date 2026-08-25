@@ -21,14 +21,24 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 RESULTS = ROOT / "results" / "oos_predictions.csv"
-pytestmark = pytest.mark.skipif(not RESULTS.exists(), reason="no completed run present")
+
+# These check the committed run against the realised return, which is a vendor-
+# derived series this repository no longer publishes. They run for anyone who has
+# obtained a snapshot and rebuilt the results; in CI they skip, and the reason
+# says which of the two situations applies.
+pytestmark = pytest.mark.skipif(
+    not RESULTS.exists() or "realised_o2c" not in RESULTS.read_text(
+        encoding="utf-8").splitlines()[0],
+    reason="needs a completed run carrying the realised return; that column is "
+           "vendor-derived and is not distributed. Obtain a snapshot and rerun P1.",
+)
 
 
 @pytest.fixture(scope="module")
-def run():
+def run(market_frame):
     from build_benchmarks import intraday_financing, load_snapshot
     oos = pd.read_csv(RESULTS, index_col="date", parse_dates=True)
-    snapshot, _ = load_snapshot()
+    snapshot = market_frame
     fin = intraday_financing(snapshot, snapshot.index).shift(-1).reindex(oos.index)
     return oos, fin
 

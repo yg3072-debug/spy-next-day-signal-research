@@ -25,9 +25,11 @@ EXPECTED_FEATURE_COUNT = 81
 
 
 @pytest.fixture(scope="module")
-def snapshot():
-    frame, _ = load_snapshot()
-    return frame
+def snapshot(market_frame):
+    # The snapshot is not distributed; `market_frame` supplies a real one when the
+    # user has obtained it and the synthetic fixture otherwise. What this file
+    # asserts holds on either, because it is about the code.
+    return market_frame
 
 
 @pytest.fixture(scope="module")

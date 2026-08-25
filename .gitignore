@@ -48,3 +48,9 @@ results/empty_post_diagnosis.csv
 **/*raw_posts*
 **/*raw_headlines*
 **/*transcript*
+
+# Market snapshots are not distributed: they derive from a vendor whose terms
+# restrict redistribution. scripts/freeze_market_data.py obtains one locally.
+data/market_inputs_*.csv
+data/market_inputs_*.manifest.json
+data/vintage_*/

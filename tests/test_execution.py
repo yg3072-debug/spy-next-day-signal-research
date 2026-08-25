@@ -195,13 +195,17 @@ def test_registry_round_trips():
 RESULTS = ROOT / "results" / "oos_predictions.csv"
 
 
-@pytest.mark.skipif(not RESULTS.exists(), reason="no completed run present")
-def test_o2c_object_reproduces_the_committed_run_exactly():
+@pytest.mark.skipif(
+    not RESULTS.exists() or "realised_o2c" not in RESULTS.read_text(
+        encoding="utf-8").splitlines()[0],
+    reason="needs the realised return, which is vendor-derived and not distributed",
+)
+def test_o2c_object_reproduces_the_committed_run_exactly(market_frame):
     """The refactor must not have changed the primary specification by a basis point."""
     sys.path.insert(0, str(ROOT / "scripts"))
     from build_benchmarks import intraday_financing, load_snapshot
     oos = pd.read_csv(RESULTS, index_col="date", parse_dates=True)
-    snapshot, _ = load_snapshot()
+    snapshot = market_frame
     fin = intraday_financing(snapshot, snapshot.index).shift(-1).reindex(oos.index)
     spec = OpenToClose()
     w = spec.positions(oos.mu_hat, 2.0, fin, 0.0)
