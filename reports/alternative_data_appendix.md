@@ -213,6 +213,14 @@ deliberate leak of this particular kind produces a positive result.
 
 ### Results
 
+**Provenance caveat, stated before the numbers.** The headline corpus's origin and
+licence could not be established (`docs/scraping_notes.md`). Its digest, size,
+columns, row count and date range are recorded, so a reader holding the same file
+can confirm it is the same file — but cannot obtain it from a named source with
+confidence. **§9.1 is therefore not independently reproducible from source**, and
+what follows should be read as an exploratory finding with incomplete data
+provenance. It bears on nothing in the confirmatory result, which uses no text.
+
 All ten arms, in specification order. 1,247 out-of-sample sessions each, identical
 rows, paired stationary bootstrap against N0.
 

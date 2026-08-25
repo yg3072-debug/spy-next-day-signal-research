@@ -1,7 +1,7 @@
 {
-  "reference": "v2-clean",
-  "reference_commit": "b71cc28943806410e2e3e96ef26199961e4ee4e9",
-  "current_commit": "b71cc28943806410e2e3e96ef26199961e4ee4e9",
+  "reference": "190c97f9258c1fe892d7ff63b36cd4ca01916074",
+  "reference_commit": "190c97f9258c1fe892d7ff63b36cd4ca01916074",
+  "current_commit": "8057f22f9368643c74010487d0d2469419ffea6b",
   "files": {
     "results/oos_predictions.csv": {
       "rows_before": 1865,
@@ -83,7 +83,12 @@
       "status": "byte-identical"
     },
     "results/news_increment_summary.csv": {
-      "status": "byte-identical"
+      "status": "identical by value",
+      "differing_columns": {},
+      "registered_label_corrections": {
+        "kind": "the negative-shift arms were described as positive controls, which docs/errata.md A8 retracts: a positive control injects a variable known to carry the answer, and future headlines are not that. Relabelled leakage stress tests. No number changed."
+      },
+      "numeric_content": "identical"
     },
     "results/exploratory_position_rules.csv": {
       "status": "byte-identical"

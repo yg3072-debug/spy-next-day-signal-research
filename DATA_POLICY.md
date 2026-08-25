@@ -105,17 +105,26 @@ its identity, row count and checksum. Obtain it, put it in `data/raw/`, and
 ## Collection conduct
 
 `scripts/collect_truth_social.py` restricts itself to one host and re-checks it
-after every redirect; sends no credentials, cookies or tokens; makes no attempt to
-bypass access control or bot detection; requests once per second; honours
+after every redirect; **supplies no user credentials, authentication tokens, or
+user-provided authentication cookies** — it uses a `requests.Session`, so a server
+may set an ordinary session cookie of its own, which is not the same thing and is
+worth distinguishing; makes no attempt to bypass access control or bot detection; requests once per second; honours
 `Retry-After`; **stops on 403** rather than retrying; downloads no media; identifies
 itself with a project User-Agent and adds a contact address only if you set
 `SCRAPER_CONTACT`; never prints fetched text to a terminal; and reduces exceptions
 to their type so a traceback cannot carry a local path into a log.
 
-`robots.txt` at the time of collection was `User-agent: * / Disallow:` — an explicit
-allowance. **The site's terms of service were not reviewed.** That is a gap, stated
-because it is one: `robots.txt` and terms of service are different instruments, and
-only the first was checked.
+As of 2026-08-25, no Terms of Service link was found on the homepage, About page,
+FAQ, or common policy paths (`/terms`, `/terms-of-service`, `/privacy`,
+`/privacy-policy`, `/legal` all return 404). The current `robots.txt` declares no
+disallowed paths.
+
+**This is not legal permission and does not grant redistribution rights.** An empty
+`Disallow` is the absence of a stated restriction, not a grant — an earlier draft of
+this document called it an "explicit allowance", which overstates what a
+`robots.txt` can convey. The absence of a published policy is likewise not consent;
+it means there is nothing to read, which is a weaker position than having read
+something permissive.
 
 ---
 

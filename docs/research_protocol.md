@@ -743,7 +743,7 @@ choice, not an oversight.
 
 - Sentiment uses the **Loughran–McDonald** financial lexicon (Loughran and McDonald 2011,
   *Journal of Finance*), which is citable and reproducible, rather than a bespoke word list
-- Source, licence and download path are recorded in `docs/scraping_notes.md`
+- Source, licence and download path are recorded in `docs/scraping_notes.md` where they could be established. **For the headline corpus they could not**: the file's digest, size, columns and row count are recorded, the origin is not, and §9.1 is consequently marked as not independently reproducible from source. The confirmatory procedure uses no text data and is unaffected
 - The raw headline file contains exact duplicate rows; deduplication is explicit and counted
 - **Availability assumption, stated because it cannot be verified from the data**: the headline
   file carries dates without times, so a headline dated D is treated conservatively as fully
