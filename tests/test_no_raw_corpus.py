@@ -21,6 +21,7 @@ but kept the ids would still hand over the corpus, one request at a time.
 from __future__ import annotations
 
 import csv
+import re
 import subprocess
 from pathlib import Path
 
@@ -135,4 +136,43 @@ def test_gitignore_uses_unix_line_endings():
     raw = (ROOT / ".gitignore").read_bytes()
     assert bytes([13, 10]) not in raw, (
         ".gitignore contains CRLF; patterns will not match as written"
+    )
+
+
+DOC_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml"}
+# A record identifier in the archive's numbering, which is five digits. Requiring
+# five rules out four-digit years, which an earlier version matched -- it flagged
+# "2024" in a sentence about dates, and a guard that cries wolf gets switched off.
+RECORD_ID = re.compile(
+    r"\b(?:status[ _]?id[s]?|post[s]? )\D{0,12}(\d{5,6})\b",
+    re.IGNORECASE,
+)
+
+
+def tracked_docs() -> list[Path]:
+    out = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True,
+                         text=True).stdout
+    return [ROOT / f for f in out.splitlines()
+            if f and Path(f).suffix.lower() in DOC_SUFFIXES]
+
+
+def test_documentation_does_not_quote_record_identifiers():
+    """Prose is in scope too.
+
+    The scan started on CSVs, so scraping_notes.md kept a status-id range and two
+    identifiers in ordinary sentences -- forbidden data in a permitted file type,
+    which is exactly the gap a file-type-scoped rule leaves open.
+    """
+    offenders = {}
+    for path in tracked_docs():
+        rel = str(path.relative_to(ROOT)).replace("\\", "/")
+        if rel in ("tests/test_no_raw_corpus.py",):
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        hits = RECORD_ID.findall(text)
+        if hits:
+            offenders[rel] = sorted(set(hits))[:5]
+    assert not offenders, (
+        f"documentation quotes record identifiers: {offenders}. Describe the "
+        "handling rule; do not reproduce the identifiers."
     )

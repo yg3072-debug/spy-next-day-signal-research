@@ -12,7 +12,10 @@ Nothing this writes is committable.
 What it does, and what it refuses to do:
 
 * one host only, `trumpstruth.org`, checked again **after** any redirect
-* read-only `GET`; no credentials, cookies, tokens or login of any kind
+* read-only `GET`; supplies no user credentials, authentication tokens or
+  user-provided authentication cookies. A `requests.Session` is used, so a
+  server may set an ordinary session cookie of its own; that is not the same
+  thing and the distinction is worth keeping
 * no attempt to bypass access control, rate limits or bot detection
 * one request per second, with `Retry-After` honoured on 429
 * **stops on 403** rather than retrying — the right answer to being refused is to
@@ -51,7 +54,8 @@ ALLOWED_HOST = "trumpstruth.org"
 BASE = f"https://{ALLOWED_HOST}"
 CONTACT = os.environ.get("SCRAPER_CONTACT", "")
 HEADERS = {
-    "User-Agent": "spy-next-day-signal-research/1.0 (academic research"
+    "User-Agent": "spy-next-day-signal-research/1.0 "
+                  "(+https://github.com/yg3072-debug/spy-next-day-signal-research"
                   + (f"; {CONTACT}" if CONTACT else "") + ")"
 }
 SLEEP = 1.0

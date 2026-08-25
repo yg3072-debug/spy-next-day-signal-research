@@ -50,7 +50,8 @@ ALLOWED_HOST = "trumpstruth.org"
 BASE = f"https://{ALLOWED_HOST}/statuses"
 CONTACT = os.environ.get("SCRAPER_CONTACT", "")
 HEADERS = {
-    "User-Agent": "spy-next-day-signal-research/1.0 (academic research"
+    "User-Agent": "spy-next-day-signal-research/1.0 "
+                  "(+https://github.com/yg3072-debug/spy-next-day-signal-research"
                   + (f"; {CONTACT}" if CONTACT else "") + ")"
 }
 SLEEP = 1.0
