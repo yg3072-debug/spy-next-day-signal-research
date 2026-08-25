@@ -238,8 +238,15 @@ def compare_to_baseline() -> int:
         print(f"  {'ok  ' if ok else 'FAIL'} {name}")
     print("")
     print("compared against the recorded baseline for "
-          f"{recorded['pre_sanitization_commit'][:8]}; the commit itself "
-          "is no longer fetchable")
+          f"{recorded['pre_sanitization_commit'][:8]}, which this repository "
+          "cannot reach.")
+    print("That is expected in a fresh clone: the commit is served only through a "
+          "closed")
+    print("pull request reference, which cloning does not fetch. It is also what "
+          "will")
+    print("remain true permanently once GitHub purges that reference, which is why "
+          "the")
+    print("digests were recorded before asking.")
     return 0 if not bad else 1
 
 
